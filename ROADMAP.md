@@ -9,14 +9,14 @@
 - Define target architecture.
 - Establish repository structure.
 
-## Phase 1 — Database Redesign & Normalization
+## Phase 1 — Database Redesign & Normalization ✅
 
-- Define entities and relationships.
-- Produce conceptual model.
-- Produce physical model.
-- Normalize to an appropriate normal form.
-- Define primary, alternate and foreign keys.
-- Create `ArchiveCoreDb` schema.
+- [x] Define entities and relationships.
+- [x] Produce conceptual model.
+- [x] Produce physical model.
+- [x] Normalize operational schema to 3NF.
+- [x] Define primary, alternate and foreign keys.
+- [x] Create `ArchiveCoreDb` schema.
 
 ## Phase 2 — Advanced SQL Server
 

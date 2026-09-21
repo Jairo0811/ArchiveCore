@@ -38,13 +38,15 @@
 - [x] SQL Server dependency registration.
 - [x] OpenAPI and database health check.
 
-## Phase 4 — Identity & Access Control
+## Phase 4 — Identity & Access Control ✅
 
-- Authentication.
-- JWT + refresh tokens.
-- Roles.
-- Permissions.
-- Password policies.
+- [x] Password hashing.
+- [x] JWT access tokens.
+- [x] Refresh-token persistence, rotation and revocation.
+- [x] Role claims.
+- [x] Administrator authorization policy.
+- [x] Administrator-controlled user provisioning.
+- [x] Secure first-administrator bootstrap.
 
 ## Phase 5 — Records & Documents
 

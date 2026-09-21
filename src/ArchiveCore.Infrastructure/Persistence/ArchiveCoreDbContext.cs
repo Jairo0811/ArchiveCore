@@ -17,6 +17,7 @@ public sealed class ArchiveCoreDbContext(DbContextOptions<ArchiveCoreDbContext> 
     public DbSet<MovementType> MovementTypes => Set<MovementType>();
     public DbSet<RecordMovement> RecordMovements => Set<RecordMovement>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

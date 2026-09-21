@@ -23,8 +23,12 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
 
+        services.Configure<BootstrapAdminOptions>(
+            configuration.GetSection(BootstrapAdminOptions.SectionName));
+
         services.AddScoped<PasswordService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<AdminBootstrapper>();
 
         return services;
     }

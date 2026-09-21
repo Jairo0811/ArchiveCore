@@ -1,4 +1,6 @@
+using ArchiveCore.Application.Auth;
 using ArchiveCore.Infrastructure.Persistence;
+using ArchiveCore.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,12 @@ public static class DependencyInjection
 
         services.AddDbContext<ArchiveCoreDbContext>(options =>
             options.UseSqlServer(connectionString));
+
+        services.Configure<JwtOptions>(
+            configuration.GetSection(JwtOptions.SectionName));
+
+        services.AddScoped<PasswordService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

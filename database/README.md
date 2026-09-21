@@ -1,35 +1,52 @@
 # ArchiveCore Database
 
-The production database will be designed during **Phase 1 — Database Redesign & Normalization**.
+Target database: **`ArchiveCoreDb`**
 
-Planned script organization:
+## Current implementation
+
+Phase 1 establishes the normalized relational foundation.
 
 ```text
 database/
 ├── 01-schema.sql
 ├── 02-constraints.sql
-├── 03-indexes.sql
-├── 04-views.sql
-├── 05-procedures.sql
-├── 06-triggers.sql
+├── 03-indexes.sql        # Phase 2
+├── 04-views.sql          # Phase 2
+├── 05-procedures.sql     # Phase 2
+├── 06-triggers.sql       # Phase 2
 └── 07-seed.sql
 ```
 
-## Target database
+## Phase 1 entities
 
-`ArchiveCoreDb`
+- Users
+- Roles
+- UserRoles
+- Records
+- RecordStatuses
+- Documents
+- DocumentVersions
+- DocumentCategories
+- RecordMovements
+- MovementTypes
+- AuditEvents
 
-## Database responsibilities
+## Execution order
 
-The redesigned schema will cover:
+Run:
 
-- Users and roles.
-- Records / case files.
-- Documents.
-- Document categories.
-- Record statuses.
-- Record movements.
-- Document versions.
-- Audit events.
+1. `01-schema.sql`
+2. `02-constraints.sql`
+3. `07-seed.sql`
 
-The final design will include normalization, referential integrity, performance indexes, stored procedures, views and audit triggers.
+Phase 2 will add performance indexes, views, stored procedures, triggers and advanced audit behavior.
+
+## Design goals
+
+- Third Normal Form operational model.
+- Explicit referential integrity.
+- Business-key uniqueness.
+- SQL Server-friendly concurrency with `rowversion`.
+- UTC timestamps.
+- Version-aware document metadata.
+- Traceable records workflow.

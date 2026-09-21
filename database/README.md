@@ -25,7 +25,8 @@ database/
 5. `04-views.sql`
 6. `05-procedures.sql`
 7. `06-triggers.sql`
-8. `08-queries.sql` — optional example queries
+8. `09-auth.sql` — identity/refresh-token extension
+9. `08-queries.sql` — optional example queries
 
 ## Advanced SQL capabilities
 

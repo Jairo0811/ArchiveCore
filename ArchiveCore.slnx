@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ArchiveCore.Domain/ArchiveCore.Domain.csproj" />
+    <Project Path="src/ArchiveCore.Application/ArchiveCore.Application.csproj" />
+    <Project Path="src/ArchiveCore.Infrastructure/ArchiveCore.Infrastructure.csproj" />
+    <Project Path="src/ArchiveCore.WebApi/ArchiveCore.WebApi.csproj" />
+  </Folder>
+</Solution>

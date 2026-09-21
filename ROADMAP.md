@@ -27,14 +27,16 @@
 - [x] Add transactional mutation procedures.
 - [x] Add advanced query examples.
 
-## Phase 3 — .NET Backend Foundation
+## Phase 3 — .NET Backend Foundation ✅
 
-- Create .NET solution.
-- Domain layer.
-- Application layer.
-- Infrastructure layer.
-- Web API.
-- EF Core mappings and migrations.
+- [x] Create .NET 10 solution.
+- [x] Domain layer.
+- [x] Application layer.
+- [x] Infrastructure layer.
+- [x] ASP.NET Core Web API.
+- [x] EF Core mappings to ArchiveCoreDb.
+- [x] SQL Server dependency registration.
+- [x] OpenAPI and database health check.
 
 ## Phase 4 — Identity & Access Control
 

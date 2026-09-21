@@ -57,6 +57,12 @@ builder.Services
 
 var app = builder.Build();
 
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var bootstrapper = scope.ServiceProvider.GetRequiredService<AdminBootstrapper>();
+    await bootstrapper.BootstrapAsync();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

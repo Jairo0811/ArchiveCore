@@ -18,14 +18,14 @@
 - [x] Define primary, alternate and foreign keys.
 - [x] Create `ArchiveCoreDb` schema.
 
-## Phase 2 — Advanced SQL Server
+## Phase 2 — Advanced SQL Server ✅
 
-- Add indexes based on query patterns.
-- Add views.
-- Add stored procedures.
-- Add audit tables and triggers.
-- Add transactions and concurrency controls.
-- Add seed data.
+- [x] Add indexes based on query patterns.
+- [x] Add views.
+- [x] Add stored procedures.
+- [x] Add audit tables and triggers.
+- [x] Add transactional mutation procedures.
+- [x] Add advanced query examples.
 
 ## Phase 3 — .NET Backend Foundation
 

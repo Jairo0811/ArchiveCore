@@ -2,9 +2,9 @@
 
 **Document & Records Management System**
 
-ArchiveCore is a modern reconstruction of an academic database project originally developed for **Bases de Datos Avanzadas (SOF-008)** at ITLA.
+ArchiveCore is a modern full-stack reconstruction of an academic project originally developed for **Bases de Datos Avanzadas (SOF-008)** at ITLA, imparted by **Carlos Caraballos**.
 
-The original project focused on database design for an information system and included early entities such as `Administrador`, `Usuarios`, `IdArchivo` and `IdRegistro`. The reconstruction preserves that legacy while evolving the concept into a full document and records management platform.
+The reconstruction preserves the original SQL artifact while evolving the concept into a secure records, document-versioning, workflow and audit platform.
 
 ## Academic origin
 
@@ -12,95 +12,96 @@ The original project focused on database design for an information system and in
 - **Professor:** Carlos Caraballos
 - **Institution:** Instituto Tecnológico de Las Américas (ITLA)
 - **Original artifact:** SQL Server database project
-- **Modernization:** 2026
+- **Modern reconstruction:** 2026
 
-The original assignment required:
+The original assignment emphasized conceptual/physical modeling, normalization, indexes, SQL queries, triggers, stored procedures and audit tracking. ArchiveCore keeps those database concerns first-class and adds a modern application around them.
 
-- Business and information-needs analysis
-- Application proposal
-- Conceptual database model
-- Physical database model
-- SQL queries
-- Normalization
-- Indexing
-- Audit tracking
-- Triggers and stored procedures
-
-## Product vision
-
-ArchiveCore will manage:
-
-- Users and roles
-- Records / case files
-- Documents and versions
-- Document categories
-- Record movements and assignments
-- Status workflows
-- Audit history
-- Operational reports
-
-The database remains a first-class component of the system rather than merely persistence for a CRUD application.
-
-## Planned stack
+## Stack
 
 ### Backend
+
 - .NET 10
-- ASP.NET Core Web API
+- ASP.NET Core Minimal API
 - Entity Framework Core
-- Clean / Onion Architecture
-- JWT authentication and authorization
+- Clean / Onion-style separation
+- JWT + rotating refresh tokens
+- ASP.NET Core password hashing
 
 ### Frontend
-- React
+
+- React 19
 - TypeScript
 - Vite
 - TanStack Query
 - React Router
 
 ### Database
+
 - Microsoft SQL Server
-- Stored Procedures
+- 3NF operational model
+- Primary/foreign/alternate keys
+- Query-driven indexes
 - Views
-- Triggers
+- Stored procedures
 - Transactions
-- Indexes
-- Constraints
-- Audit trail
-- Optimistic concurrency
+- Audit triggers
+- JSON before/after snapshots
+- Optimistic concurrency with `rowversion`
+
+## Main capabilities
+
+- Users, roles and administrator provisioning
+- JWT authentication and refresh-token rotation
+- Records / case files
+- Document metadata and physical versions
+- SHA-256 file integrity hashes
+- Record transfers and closure workflow
+- Movement history
+- Database-backed audit history
+- Dashboard metrics
+- Responsive authenticated React interface
 
 ## Repository structure
 
 ```text
 ArchiveCore/
-├── database/
-│   └── README.md
-├── docs/
-│   ├── academic/
-│   ├── architecture/
-│   └── legacy/
+├── database/            SQL Server schema and advanced SQL
+├── docs/                academic, architecture, setup and phase documentation
+├── frontend/            React + TypeScript SPA
 ├── src/
-├── frontend/
-├── .gitignore
+│   ├── ArchiveCore.Domain/
+│   ├── ArchiveCore.Application/
+│   ├── ArchiveCore.Infrastructure/
+│   └── ArchiveCore.WebApi/
+├── tests/
+│   └── ArchiveCore.Api.Tests/
+├── docker-compose.yml
+├── ArchiveCore.slnx
 ├── ROADMAP.md
 └── README.md
 ```
 
-## Modernization strategy
+## Database execution order
 
-The original SQL is retained under `docs/legacy/` and must not be treated as production-ready code.
+See `database/README.md`. The schema is intentionally maintained as explicit SQL because advanced SQL Server design is part of ArchiveCore's academic and technical identity.
 
-The modernization follows four principles:
+## Security
 
-1. Preserve the academic history.
-2. Redesign the data model using proper relational modeling and normalization.
-3. Demonstrate advanced SQL Server capabilities required by SOF-008.
-4. Build a modern full-stack implementation around the redesigned database.
+No JWT signing key or default administrator password is committed to the repository.
+
+See:
+
+`docs/setup/security-setup.md`
+
+for the user-secrets/bootstrap procedure.
 
 ## Current status
 
-**Phase 0 — Legacy Analysis & Project Foundation**
+**Phases 0–9 implemented. Feature construction is complete.**
 
-See [ROADMAP.md](ROADMAP.md) for the complete modernization plan.
+The repository is now at the **local validation** milestone. We will next run the database scripts, restore/build both applications, start the stack and fix any runtime findings before declaring the release candidate locally verified.
+
+See `ROADMAP.md` for the completed modernization plan.
 
 ---
 

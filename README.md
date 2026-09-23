@@ -3,23 +3,25 @@
 # ArchiveCore
 
 <img src="https://img.shields.io/badge/ITLA-SOF--008-0057B8?style=for-the-badge" alt="ITLA SOF-008" />
-<img src="https://img.shields.io/badge/Estado-Reconstrucci%C3%B3n%202026-2563EB?style=for-the-badge" alt="Reconstrucción 2026" />
+<img src="https://img.shields.io/badge/Estado-Reconstrucci%C3%B3n%20moderna-2563EB?style=for-the-badge" alt="Reconstrucción moderna" />
 
 <br/><br/>
 
 <a href="https://github.com/Jairo0811/ArchiveCore/actions/workflows/ci.yml">
-  <img src="https://github.com/Jairo0811/ArchiveCore/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  <img src="https://github.com/Jairo0811/ArchiveCore/actions/workflows/ci.yml/badge.svg" alt="Integración continua" />
 </a>
 
 <br/><br/>
 
-**Document & Records Management System**
+**Sistema de Gestión Documental y Expedientes**
 
 </div>
 
-ArchiveCore is a modern full-stack reconstruction of an academic project originally developed for **Bases de Datos Avanzadas (SOF-008)** at ITLA, imparted by **Carlos Caraballos**.
+ArchiveCore es una reconstrucción moderna de un proyecto académico desarrollado originalmente para la asignatura **Bases de Datos Avanzadas (SOF-008)** del **Instituto Tecnológico de Las Américas (ITLA)**, impartida por **Carlos Caraballos**.
 
-The reconstruction preserves the original SQL artifact while evolving the concept into a secure records, document-versioning, workflow and audit platform.
+El proyecto original estaba centrado en diseño y administración de bases de datos. La reconstrucción actual conserva ese origen y lo amplía hasta convertirlo en una plataforma completa para la **gestión de expedientes, documentos, versiones, movimientos, usuarios, roles y auditoría**.
+
+ArchiveCore mantiene a **SQL Server como núcleo técnico del sistema**, incorporando una aplicación web moderna construida con **.NET 10, ASP.NET Core, React y TypeScript**.
 
 ## 🎓 Información académica
 
@@ -29,25 +31,42 @@ The reconstruction preserves the original SQL artifact while evolving the concep
 | 📖 Asignatura | **Bases de Datos Avanzadas (SOF-008)** |
 | 👨‍🏫 Profesor | **Carlos Caraballos** |
 | 📅 Período académico | **Pendiente de documentar en el repositorio** |
-| 📁 Artefacto original | **Proyecto de base de datos SQL Server** |
-| 🛠️ Reconstrucción | **2026** |
+| 📁 Artefacto original | **Proyecto de base de datos en SQL Server** |
+| 🛠️ Reconstrucción moderna | **2026** |
 
-El proyecto académico original se enfocó en modelado conceptual/físico, normalización, índices, consultas SQL, triggers, procedimientos almacenados y trazabilidad de auditoría. ArchiveCore mantiene esos aspectos de base de datos como núcleo técnico y añade una aplicación moderna alrededor de ellos.
+El trabajo académico original se enfocó en:
 
-## 🧭 Continuidad académica
+- Modelado conceptual y físico.
+- Normalización.
+- Índices.
+- Consultas SQL.
+- Procedimientos almacenados.
+- Triggers.
+- Auditoría y trazabilidad.
 
-### 👨‍🏫 Continuidad por profesor
+La reconstrucción moderna conserva esos objetivos y los integra dentro de una aplicación real de gestión documental.
 
-ArchiveCore comparte profesor con [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW). Ambos proyectos fueron desarrollados bajo la docencia de **Carlos Caraballos**, aunque corresponden a asignaturas y objetivos distintos.
+## 🧭 Evolución del proyecto
 
-| Orden | Asignatura | Proyecto | Período |
-|---:|---|---|---|
-| 1 | Bases de Datos Avanzadas (SOF-008) | **ArchiveCore** | Pendiente de documentar |
-| 2 | Minería de Datos e Inteligencia de Negocios (SOF-014) | [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW) | 2017-C3 |
+El esquema original contenía conceptos iniciales como:
 
-La relación es **académica y docente**, no una dependencia técnica entre repositorios.
+- `Administrador`
+- `Usuarios`
+- `IdArchivo`
+- `IdRegistro`
 
-## 🧱 Stack tecnológico
+En ArchiveCore estos conceptos evolucionaron a un modelo relacional completo:
+
+| Concepto original | Evolución en ArchiveCore |
+|---|---|
+| `Administrador` | Usuarios + Roles + asignación de permisos |
+| `Usuarios` | Gestión centralizada de usuarios |
+| `IdRegistro` | Expedientes |
+| `IdArchivo` | Documentos y versiones de documentos |
+
+De esta forma, el proyecto mantiene su origen académico sin conservar las limitaciones técnicas del diseño inicial.
+
+## 🧱 Tecnologías utilizadas
 
 ### ⚙️ Backend
 
@@ -59,9 +78,13 @@ La relación es **académica y docente**, no una dependencia técnica entre repo
 - .NET 10
 - ASP.NET Core Minimal API
 - Entity Framework Core
-- Clean / Onion-style separation
-- JWT + rotating refresh tokens
-- ASP.NET Core password hashing
+- Arquitectura por capas inspirada en Clean Architecture / Onion Architecture
+- Autenticación JWT
+- Refresh tokens con rotación y revocación
+- Hash seguro de contraseñas
+- Inyección de dependencias
+- OpenAPI
+- Health checks
 
 ### 🎨 Frontend
 
@@ -74,6 +97,9 @@ La relación es **académica y docente**, no una dependencia técnica entre repo
 - Vite
 - TanStack Query
 - React Router
+- Interfaz responsive
+- Dashboard administrativo
+- Navegación basada en roles
 
 ### 🗄️ Base de datos
 
@@ -82,71 +108,280 @@ La relación es **académica y docente**, no una dependencia técnica entre repo
 </p>
 
 - Microsoft SQL Server
-- 3NF operational model
-- Primary/foreign/alternate keys
-- Query-driven indexes
-- Views
-- Stored procedures
-- Transactions
-- Audit triggers
-- JSON before/after snapshots
-- Optimistic concurrency with `rowversion`
+- Modelo relacional normalizado hasta 3NF
+- Claves primarias, foráneas y alternativas
+- Restricciones de integridad
+- Índices orientados a patrones de consulta
+- Vistas
+- Procedimientos almacenados
+- Transacciones
+- Triggers de auditoría
+- Historial de cambios mediante JSON
+- Control de concurrencia con `rowversion`
 
-## Main capabilities
+## 🧩 Funcionalidades principales
 
-- Users, roles and administrator provisioning
-- JWT authentication and refresh-token rotation
-- Records / case files
-- Document metadata and physical versions
-- SHA-256 file integrity hashes
-- Record transfers and closure workflow
-- Movement history
-- Database-backed audit history
-- Dashboard metrics
-- Responsive authenticated React interface
+### 👤 Usuarios y seguridad
 
-## Repository structure
+- Inicio de sesión mediante JWT.
+- Refresh tokens.
+- Rotación y revocación de sesiones.
+- Roles de usuario.
+- Política exclusiva para administradores.
+- Creación controlada de usuarios.
+- Bootstrap seguro del primer administrador.
+- Contraseñas almacenadas mediante hash.
+
+### 📁 Expedientes
+
+- Creación de expedientes.
+- Consulta y búsqueda.
+- Estados de expediente.
+- Asignación de responsables.
+- Cierre de expedientes.
+- Historial de actividad.
+
+### 📄 Documentos
+
+- Asociación de documentos a expedientes.
+- Categorías documentales.
+- Versionado.
+- Identificación de versión actual.
+- Eliminación lógica.
+- Almacenamiento físico desacoplado.
+- Hash SHA-256 para validar integridad.
+
+### 🔄 Flujo de trabajo
+
+- Transferencia de expedientes entre usuarios.
+- Registro de usuario origen y destino.
+- Notas de movimiento.
+- Historial cronológico.
+- Cierre y cambios de estado.
+
+### 🛡️ Auditoría
+
+- Auditoría automática mediante triggers de SQL Server.
+- Registro de inserciones, modificaciones y eliminaciones.
+- Valores anteriores y posteriores almacenados como JSON.
+- Identificación del usuario que ejecutó la acción.
+- Consulta de auditoría por:
+  - entidad,
+  - registro,
+  - usuario,
+  - tipo de acción,
+  - rango de fechas.
+
+### 📊 Dashboard
+
+El panel principal muestra indicadores operativos como:
+
+- Expedientes activos.
+- Expedientes cerrados.
+- Documentos activos.
+- Usuarios activos.
+- Movimientos realizados en el día.
+- Eventos de auditoría del día.
+
+La interfaz visual utiliza una identidad oscura en tonos navy, azul y cian, alineada con el concepto de seguridad, trazabilidad y control documental de ArchiveCore.
+
+## 🏗️ Arquitectura del repositorio
 
 ```text
 ArchiveCore/
-├── database/            SQL Server schema and advanced SQL
-├── docs/                academic, architecture, setup and phase documentation
-├── frontend/            React + TypeScript SPA
+├── database/
+│   ├── 01-schema.sql
+│   ├── 02-constraints.sql
+│   ├── 03-indexes.sql
+│   ├── 04-views.sql
+│   ├── 05-procedures.sql
+│   ├── 06-triggers.sql
+│   ├── 07-seed.sql
+│   ├── 08-queries.sql
+│   ├── 09-auth.sql
+│   └── 10-validation.sql
+│
+├── docs/
+│   ├── academic/
+│   ├── architecture/
+│   ├── legacy/
+│   ├── phases/
+│   └── setup/
+│
+├── frontend/
+│   └── Aplicación React + TypeScript + Vite
+│
 ├── src/
 │   ├── ArchiveCore.Domain/
 │   ├── ArchiveCore.Application/
 │   ├── ArchiveCore.Infrastructure/
 │   └── ArchiveCore.WebApi/
+│
 ├── tests/
 │   └── ArchiveCore.Api.Tests/
+│
 ├── docker-compose.yml
 ├── ArchiveCore.slnx
 ├── ROADMAP.md
 └── README.md
 ```
 
-## Database execution order
+## 🧠 Arquitectura de software
 
-See `database/README.md`. The schema is intentionally maintained as explicit SQL because advanced SQL Server design is part of ArchiveCore's academic and technical identity.
+El backend está organizado en cuatro capas principales:
 
-## Security
+### `ArchiveCore.Domain`
 
-No JWT signing key or default administrator password is committed to the repository.
+Contiene las entidades principales y reglas del dominio.
 
-See:
+### `ArchiveCore.Application`
+
+Define contratos, casos de uso y abstracciones de aplicación.
+
+### `ArchiveCore.Infrastructure`
+
+Implementa:
+
+- acceso a datos,
+- Entity Framework Core,
+- SQL Server,
+- seguridad,
+- almacenamiento de archivos,
+- servicios de expedientes,
+- documentos,
+- workflow,
+- auditoría.
+
+### `ArchiveCore.WebApi`
+
+Actúa como punto de entrada HTTP y contiene:
+
+- configuración de ASP.NET Core,
+- autenticación,
+- autorización,
+- endpoints,
+- OpenAPI,
+- health checks.
+
+## 🗄️ Orden de ejecución de la base de datos
+
+Los scripts deben ejecutarse en este orden:
+
+```text
+01-schema.sql
+02-constraints.sql
+07-seed.sql
+03-indexes.sql
+04-views.sql
+05-procedures.sql
+06-triggers.sql
+09-auth.sql
+10-validation.sql
+```
+
+El archivo `08-queries.sql` contiene consultas de ejemplo y puede ejecutarse de manera opcional.
+
+Para más detalles consulta:
+
+`database/README.md`
+
+## 🔐 Seguridad y secretos
+
+ArchiveCore **no almacena claves JWT ni contraseñas administrativas dentro del repositorio**.
+
+Para desarrollo local se utilizan:
+
+- .NET User Secrets.
+- Variables de entorno.
+- Configuración específica del entorno.
+
+La guía de configuración se encuentra en:
 
 `docs/setup/security-setup.md`
 
-for the user-secrets/bootstrap procedure.
+## 🐳 Docker
 
-## Current status
+El proyecto incluye:
 
-**Phases 0–9 implemented. Feature construction is complete.**
+- Dockerfile para la API.
+- Dockerfile para el frontend.
+- Nginx para servir la SPA.
+- Docker Compose.
+- SQL Server 2022.
+- Volumen persistente para la base de datos.
+- Volumen persistente para documentos.
 
-The repository is now at the **local validation** milestone. We will next run the database scripts, restore/build both applications, start the stack and fix any runtime findings before declaring the release candidate locally verified.
+## 🧪 Calidad y validación
 
-See `ROADMAP.md` for the completed modernization plan.
+El repositorio incluye:
+
+- Pruebas básicas de la API.
+- Script de validación del esquema SQL.
+- GitHub Actions.
+- Build automatizado del backend.
+- Build automatizado del frontend.
+- Configuración para Docker.
+
+## 🗺️ Fases de reconstrucción
+
+ArchiveCore fue reconstruido en las siguientes fases:
+
+1. Análisis del legado y fundación del proyecto.
+2. Rediseño y normalización de la base de datos.
+3. SQL Server avanzado.
+4. Fundación del backend .NET.
+5. Identidad y control de acceso.
+6. Expedientes y documentos.
+7. Workflow y movimientos.
+8. Auditoría y trazabilidad.
+9. Aplicación web en React.
+10. Calidad, Docker y endurecimiento para portafolio.
+
+El detalle completo se encuentra en:
+
+`ROADMAP.md`
+
+## 🎯 Estado actual
+
+**La construcción funcional y visual principal del proyecto está completada.**
+
+El repositorio contiene actualmente:
+
+- Base de datos avanzada.
+- Backend .NET.
+- Autenticación y autorización.
+- Gestión de expedientes.
+- Gestión documental.
+- Versionado.
+- Workflow.
+- Auditoría.
+- Dashboard React.
+- Interfaz visual alineada con la identidad ArchiveCore.
+- Docker.
+- Pruebas.
+- Integración continua.
+
+La siguiente etapa corresponde a la **validación local completa**, donde se probará el sistema en ejecución con SQL Server, backend y frontend trabajando de manera integrada.
+
+## 🧭 Continuidad académica
+
+ArchiveCore comparte profesor con [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW).
+
+Ambos proyectos fueron desarrollados bajo la docencia de **Carlos Caraballos**, aunque corresponden a asignaturas y objetivos diferentes.
+
+| Orden | Asignatura | Proyecto | Período |
+|---:|---|---|---|
+| 1 | Bases de Datos Avanzadas (SOF-008) | **ArchiveCore** | Pendiente de documentar |
+| 2 | Minería de Datos e Inteligencia de Negocios (SOF-014) | [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW) | 2017-C3 |
+
+La relación entre ambos repositorios es exclusivamente **académica y docente**.
 
 ---
 
-ArchiveCore is an academic reconstruction and portfolio project.
+<div align="center">
+
+**ArchiveCore — Información segura, trazable y bajo control.**
+
+Proyecto académico reconstruido para portafolio.
+
+</div>

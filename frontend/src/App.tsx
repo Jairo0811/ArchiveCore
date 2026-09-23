@@ -22,6 +22,25 @@ type RecordSummary = {
   closedAtUtc: string | null;
 };
 
+type DocumentSummary = {
+  documentId: number;
+  recordId: number;
+  title: string;
+  documentNumber: string | null;
+  category: string;
+  currentVersion: number;
+  createdAtUtc: string;
+};
+
+type AuditEventSummary = {
+  auditEventId: number;
+  userId: number | null;
+  entityName: string;
+  entityKey: string;
+  actionType: string;
+  createdAtUtc: string;
+};
+
 const STORAGE_KEY = "archivecore.auth";
 
 function readAuth(): AuthResponse | null {
@@ -134,8 +153,8 @@ function Shell({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void })
         <Routes>
           <Route path="/" element={<Dashboard token={auth.accessToken} />} />
           <Route path="/records" element={<Records token={auth.accessToken} />} />
-          <Route path="/documents" element={<Placeholder title="Documentos" />} />
-          <Route path="/audit" element={<Placeholder title="Auditoría" />} />
+          <Route path="/documents" element={<Documents token={auth.accessToken} />} />
+          <Route path="/audit" element={<Audit token={auth.accessToken} />} />
         </Routes>
       </main>
     </div>
@@ -223,11 +242,82 @@ function Records({ token }: { token: string }) {
   );
 }
 
-function Placeholder({ title }: { title: string }) {
+function Documents({ token }: { token: string }) {
+  const [recordId, setRecordId] = useState("1");
+
+  const { data = [], isLoading, error, refetch } = useQuery({
+    queryKey: ["documents", recordId],
+    queryFn: () => api<DocumentSummary[]>("/documents/record/" + recordId, {}, token),
+    enabled: false,
+  });
+
   return (
     <>
-      <header className="page-header"><div><p className="eyebrow">ArchiveCore</p><h2>{title}</h2></div></header>
-      <section className="panel"><p className="muted">El módulo está conectado al backend y queda listo para validación local.</p></section>
+      <header className="page-header">
+        <div><p className="eyebrow">Documents</p><h2>Documentos</h2></div>
+        <div className="inline-tools">
+          <input className="search" type="number" min="1" value={recordId}
+            onChange={(event) => setRecordId(event.target.value)} placeholder="ID expediente" />
+          <button className="primary compact" onClick={() => refetch()}>Consultar</button>
+        </div>
+      </header>
+      <section className="table-card">
+        {isLoading && <PageState text="Cargando documentos…" />}
+        {error && <PageState text="No se pudieron cargar los documentos." />}
+        {!isLoading && !error && (
+          <table>
+            <thead><tr><th>ID</th><th>Documento</th><th>Categoría</th><th>Versión</th><th>Creación</th></tr></thead>
+            <tbody>
+              {data.map((document) => (
+                <tr key={document.documentId}>
+                  <td className="mono">{document.documentNumber ?? document.documentId}</td>
+                  <td>{document.title}</td>
+                  <td>{document.category}</td>
+                  <td><span className="tag">v{document.currentVersion}</span></td>
+                  <td>{new Date(document.createdAtUtc).toLocaleDateString()}</td>
+                </tr>
+              ))}
+              {data.length === 0 && <tr><td colSpan={5} className="empty">Consulta un expediente para ver sus documentos.</td></tr>}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </>
+  );
+}
+
+function Audit({ token }: { token: string }) {
+  const { data = [], isLoading, error } = useQuery({
+    queryKey: ["audit"],
+    queryFn: () => api<AuditEventSummary[]>("/audit", {}, token),
+  });
+
+  return (
+    <>
+      <header className="page-header">
+        <div><p className="eyebrow">Traceability</p><h2>Auditoría</h2></div>
+      </header>
+      <section className="table-card">
+        {isLoading && <PageState text="Cargando auditoría…" />}
+        {error && <PageState text="No se pudo cargar la auditoría o no tienes permisos." />}
+        {!isLoading && !error && (
+          <table>
+            <thead><tr><th>Fecha</th><th>Entidad</th><th>Registro</th><th>Acción</th><th>Usuario</th></tr></thead>
+            <tbody>
+              {data.map((event) => (
+                <tr key={event.auditEventId}>
+                  <td>{new Date(event.createdAtUtc).toLocaleString()}</td>
+                  <td>{event.entityName}</td>
+                  <td className="mono">{event.entityKey}</td>
+                  <td><span className="tag">{event.actionType}</span></td>
+                  <td>{event.userId ?? "Sistema"}</td>
+                </tr>
+              ))}
+              {data.length === 0 && <tr><td colSpan={5} className="empty">No hay eventos de auditoría.</td></tr>}
+            </tbody>
+          </table>
+        )}
+      </section>
     </>
   );
 }

@@ -94,6 +94,7 @@ app.MapRecordEndpoints();
 app.MapDocumentEndpoints();
 app.MapWorkflowEndpoints();
 app.MapAuditEndpoints();
+app.MapCatalogEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

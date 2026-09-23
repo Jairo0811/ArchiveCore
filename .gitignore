@@ -39,3 +39,6 @@ coverage.*
 *.bak
 *.mdf
 *.ldf
+
+# Runtime file storage
+storage/

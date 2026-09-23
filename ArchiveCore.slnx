@@ -5,4 +5,7 @@
     <Project Path="src/ArchiveCore.Infrastructure/ArchiveCore.Infrastructure.csproj" />
     <Project Path="src/ArchiveCore.WebApi/ArchiveCore.WebApi.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ArchiveCore.Api.Tests/ArchiveCore.Api.Tests.csproj" />
+  </Folder>
 </Solution>

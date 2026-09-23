@@ -9,8 +9,9 @@ ALTER TABLE dbo.Users
 ADD CONSTRAINT UQ_Users_Email UNIQUE (Email);
 GO
 
-ALTER TABLE dbo.Users
-ADD CONSTRAINT UQ_Users_NationalId UNIQUE (NationalId);
+CREATE UNIQUE INDEX UX_Users_NationalId
+ON dbo.Users (NationalId)
+WHERE NationalId IS NOT NULL;
 GO
 
 ALTER TABLE dbo.Roles

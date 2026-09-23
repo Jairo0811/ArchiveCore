@@ -72,7 +72,7 @@ public sealed class RecordService(ArchiveCoreDbContext db) : IRecordService
         var status = await db.RecordStatuses
             .SingleAsync(x => x.Code == "OPEN", cancellationToken);
 
-        var entity = new Domain.Entities.Record
+        var entity = new ArchiveCore.Domain.Entities.Record
         {
             RecordNumber = request.RecordNumber.Trim(),
             Title = request.Title.Trim(),

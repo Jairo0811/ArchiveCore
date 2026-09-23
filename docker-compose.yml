@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${ARCHIVECORE_SQL_SA_PASSWORD}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - archivecore-sql:/var/opt/mssql
+
+  api:
+    build:
+      context: .
+      dockerfile: src/ArchiveCore.WebApi/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ArchiveCore: "Server=db,1433;Database=ArchiveCoreDb;User Id=sa;Password=${ARCHIVECORE_SQL_SA_PASSWORD};TrustServerCertificate=True"
+      Jwt__SigningKey: "${ARCHIVECORE_JWT_SIGNING_KEY}"
+      Jwt__Issuer: ArchiveCore
+      Jwt__Audience: ArchiveCore.Web
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    volumes:
+      - archivecore-documents:/app/storage/documents
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  archivecore-sql:
+  archivecore-documents:

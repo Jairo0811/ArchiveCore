@@ -49,6 +49,15 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("AdministratorsOnly", policy =>
         policy.RequireRole("Administrator"));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 builder.Services.AddOpenApi();
 
 builder.Services
@@ -69,6 +78,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -80,6 +90,10 @@ app.MapGet("/", () => Results.Ok(new
 
 app.MapAuthEndpoints();
 app.MapAccountEndpoints();
+app.MapRecordEndpoints();
+app.MapDocumentEndpoints();
+app.MapWorkflowEndpoints();
+app.MapAuditEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

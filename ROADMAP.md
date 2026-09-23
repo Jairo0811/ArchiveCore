@@ -1,13 +1,13 @@
 # ArchiveCore Roadmap
 
-## Phase 0 — Legacy Analysis & Project Foundation
+## Phase 0 — Legacy Analysis & Project Foundation ✅
 
-- Preserve original SQL artifact.
-- Document academic requirements.
-- Document legacy limitations.
-- Define product vision.
-- Define target architecture.
-- Establish repository structure.
+- [x] Preserve original SQL artifact.
+- [x] Document academic requirements.
+- [x] Document legacy limitations.
+- [x] Define product vision.
+- [x] Define target architecture.
+- [x] Establish repository structure.
 
 ## Phase 1 — Database Redesign & Normalization ✅
 
@@ -20,20 +20,17 @@
 
 ## Phase 2 — Advanced SQL Server ✅
 
-- [x] Add indexes based on query patterns.
-- [x] Add views.
-- [x] Add stored procedures.
-- [x] Add audit tables and triggers.
-- [x] Add transactional mutation procedures.
-- [x] Add advanced query examples.
+- [x] Query-driven indexes.
+- [x] Views.
+- [x] Stored procedures.
+- [x] Audit tables and triggers.
+- [x] Transactional mutation procedures.
+- [x] Advanced query examples.
 
 ## Phase 3 — .NET Backend Foundation ✅
 
-- [x] Create .NET 10 solution.
-- [x] Domain layer.
-- [x] Application layer.
-- [x] Infrastructure layer.
-- [x] ASP.NET Core Web API.
+- [x] .NET 10 solution.
+- [x] Domain, Application, Infrastructure and WebApi layers.
 - [x] EF Core mappings to ArchiveCoreDb.
 - [x] SQL Server dependency registration.
 - [x] OpenAPI and database health check.
@@ -42,54 +39,60 @@
 
 - [x] Password hashing.
 - [x] JWT access tokens.
-- [x] Refresh-token persistence, rotation and revocation.
-- [x] Role claims.
-- [x] Administrator authorization policy.
+- [x] Refresh-token rotation and revocation.
+- [x] Role claims and Administrator policy.
 - [x] Administrator-controlled user provisioning.
 - [x] Secure first-administrator bootstrap.
 
-## Phase 5 — Records & Documents
+## Phase 5 — Records & Documents ✅
 
-- Record management.
-- Document metadata.
-- Categories.
-- Versioning.
-- File-storage abstraction.
+- [x] Record queries, creation and updates.
+- [x] Document metadata.
+- [x] Document categories.
+- [x] Versioned physical files.
+- [x] SHA-256 file integrity hashes.
+- [x] Replaceable file-storage abstraction.
 
-## Phase 6 — Workflow & Movements
+## Phase 6 — Workflow & Movements ✅
 
-- Record assignments.
-- Status transitions.
-- Movement history.
-- Business rules.
+- [x] Record transfers and assignments.
+- [x] Record closure/status transition.
+- [x] Movement history.
+- [x] Authenticated workflow endpoints.
 
-## Phase 7 — Audit & Traceability
+## Phase 7 — Audit & Traceability ✅
 
-- User activity.
-- Entity history.
-- Database audit reconciliation.
-- Audit queries and reports.
+- [x] Database-trigger audit trail.
+- [x] Before/after JSON snapshots.
+- [x] Administrator audit search.
+- [x] Operational dashboard metrics.
+- [x] Audit/report query surface.
 
-## Phase 8 — React Web Application
+## Phase 8 — React Web Application ✅
 
-- React + TypeScript + Vite.
-- Authentication UX.
-- Dashboard.
-- Records.
-- Documents.
-- Movements.
-- Users.
-- Audit.
-- Reports.
+- [x] React + TypeScript + Vite.
+- [x] Authentication UX.
+- [x] Responsive application shell.
+- [x] Dashboard.
+- [x] Records search/list.
+- [x] Documents view.
+- [x] Role-aware audit view.
+- [x] TanStack Query and React Router.
 
-## Phase 9 — Quality & Portfolio Hardening
+## Phase 9 — Quality & Portfolio Hardening ✅
 
-- Unit tests.
-- Integration tests.
-- Database tests.
-- Docker.
-- CI.
-- Security hardening.
-- Documentation.
-- Screenshots and demo data.
-- Release candidate.
+- [x] API smoke tests.
+- [x] SQL validation script.
+- [x] Docker API image.
+- [x] Docker frontend image.
+- [x] Docker Compose stack.
+- [x] GitHub Actions CI.
+- [x] Secret handling documentation.
+- [x] Phase documentation.
+- [x] Release-candidate repository structure.
+
+## Current milestone
+
+**Feature construction complete.**
+
+The next milestone is **local validation**: execute SQL scripts, configure secrets, restore/build, start the stack and fix any runtime or environment-specific findings.

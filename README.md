@@ -1,24 +1,60 @@
+<div align="center">
+
 # ArchiveCore
 
+<img src="https://img.shields.io/badge/ITLA-SOF--008-0057B8?style=for-the-badge" alt="ITLA SOF-008" />
+<img src="https://img.shields.io/badge/Estado-Reconstrucci%C3%B3n%202026-2563EB?style=for-the-badge" alt="Reconstrucción 2026" />
+
+<br/><br/>
+
+<a href="https://github.com/Jairo0811/ArchiveCore/actions/workflows/ci.yml">
+  <img src="https://github.com/Jairo0811/ArchiveCore/actions/workflows/ci.yml/badge.svg" alt="CI" />
+</a>
+
+<br/><br/>
+
 **Document & Records Management System**
+
+</div>
 
 ArchiveCore is a modern full-stack reconstruction of an academic project originally developed for **Bases de Datos Avanzadas (SOF-008)** at ITLA, imparted by **Carlos Caraballos**.
 
 The reconstruction preserves the original SQL artifact while evolving the concept into a secure records, document-versioning, workflow and audit platform.
 
-## Academic origin
+## 🎓 Información académica
 
-- **Course:** Bases de Datos Avanzadas (SOF-008)
-- **Professor:** Carlos Caraballos
-- **Institution:** Instituto Tecnológico de Las Américas (ITLA)
-- **Original artifact:** SQL Server database project
-- **Modern reconstruction:** 2026
+| Información | Detalle |
+|---|---|
+| 🏫 Institución | **Instituto Tecnológico de Las Américas (ITLA)** |
+| 📖 Asignatura | **Bases de Datos Avanzadas (SOF-008)** |
+| 👨‍🏫 Profesor | **Carlos Caraballos** |
+| 📅 Período académico | **Pendiente de documentar en el repositorio** |
+| 📁 Artefacto original | **Proyecto de base de datos SQL Server** |
+| 🛠️ Reconstrucción | **2026** |
 
-The original assignment emphasized conceptual/physical modeling, normalization, indexes, SQL queries, triggers, stored procedures and audit tracking. ArchiveCore keeps those database concerns first-class and adds a modern application around them.
+El proyecto académico original se enfocó en modelado conceptual/físico, normalización, índices, consultas SQL, triggers, procedimientos almacenados y trazabilidad de auditoría. ArchiveCore mantiene esos aspectos de base de datos como núcleo técnico y añade una aplicación moderna alrededor de ellos.
 
-## Stack
+## 🧭 Continuidad académica
 
-### Backend
+### 👨‍🏫 Continuidad por profesor
+
+ArchiveCore comparte profesor con [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW). Ambos proyectos fueron desarrollados bajo la docencia de **Carlos Caraballos**, aunque corresponden a asignaturas y objetivos distintos.
+
+| Orden | Asignatura | Proyecto | Período |
+|---:|---|---|---|
+| 1 | Bases de Datos Avanzadas (SOF-008) | **ArchiveCore** | Pendiente de documentar |
+| 2 | Minería de Datos e Inteligencia de Negocios (SOF-014) | [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW) | 2017-C3 |
+
+La relación es **académica y docente**, no una dependencia técnica entre repositorios.
+
+## 🧱 Stack tecnológico
+
+### ⚙️ Backend
+
+<p>
+  <img src="https://skillicons.dev/icons?i=dotnet,cs" alt=".NET y C#" />
+  <img src="https://img.shields.io/badge/ASP.NET%20Core-Minimal%20API-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core Minimal API" />
+</p>
 
 - .NET 10
 - ASP.NET Core Minimal API
@@ -27,7 +63,11 @@ The original assignment emphasized conceptual/physical modeling, normalization, 
 - JWT + rotating refresh tokens
 - ASP.NET Core password hashing
 
-### Frontend
+### 🎨 Frontend
+
+<p>
+  <img src="https://skillicons.dev/icons?i=react,ts,vite" alt="React, TypeScript y Vite" />
+</p>
 
 - React 19
 - TypeScript
@@ -35,7 +75,11 @@ The original assignment emphasized conceptual/physical modeling, normalization, 
 - TanStack Query
 - React Router
 
-### Database
+### 🗄️ Base de datos
+
+<p>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg" width="48" height="48" alt="Microsoft SQL Server" />
+</p>
 
 - Microsoft SQL Server
 - 3NF operational model

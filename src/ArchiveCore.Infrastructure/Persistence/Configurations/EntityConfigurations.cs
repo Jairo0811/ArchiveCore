@@ -8,7 +8,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> b)
     {
-        b.ToTable("Users");
+        b.ToTable("Users", tb => tb.UseSqlOutputClause(false));
         b.HasKey(x => x.UserId);
         b.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
         b.Property(x => x.LastName).HasMaxLength(100).IsRequired();
@@ -58,7 +58,7 @@ public sealed class RecordConfiguration : IEntityTypeConfiguration<Record>
 {
     public void Configure(EntityTypeBuilder<Record> b)
     {
-        b.ToTable("Records");
+        b.ToTable("Records", tb => tb.UseSqlOutputClause(false));
         b.HasKey(x => x.RecordId);
         b.Property(x => x.RecordNumber).HasMaxLength(40).IsUnicode(false).IsRequired();
         b.Property(x => x.Title).HasMaxLength(200).IsRequired();
@@ -87,7 +87,7 @@ public sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
 {
     public void Configure(EntityTypeBuilder<Document> b)
     {
-        b.ToTable("Documents");
+        b.ToTable("Documents", tb => tb.UseSqlOutputClause(false));
         b.HasKey(x => x.DocumentId);
         b.Property(x => x.DocumentNumber).HasMaxLength(60).IsUnicode(false);
         b.Property(x => x.Title).HasMaxLength(200).IsRequired();
@@ -104,7 +104,7 @@ public sealed class DocumentVersionConfiguration : IEntityTypeConfiguration<Docu
 {
     public void Configure(EntityTypeBuilder<DocumentVersion> b)
     {
-        b.ToTable("DocumentVersions");
+        b.ToTable("DocumentVersions", tb => tb.UseSqlOutputClause(false));
         b.HasKey(x => x.DocumentVersionId);
         b.Property(x => x.OriginalFileName).HasMaxLength(260).IsRequired();
         b.Property(x => x.StoredFileName).HasMaxLength(260).IsRequired();

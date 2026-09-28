@@ -91,8 +91,25 @@
 - [x] Phase documentation.
 - [x] Release-candidate repository structure.
 
+## Phase 10 — Local Integration Validation ✅
+
+- [x] Restore and build the .NET 10 solution.
+- [x] Install frontend dependencies and complete a production Vite build.
+- [x] Recreate and execute the complete ArchiveCoreDb script chain.
+- [x] Validate critical constraints and indexes.
+- [x] Validate SQL Server views, procedures and audit triggers.
+- [x] Configure local User Secrets.
+- [x] Bootstrap the first Administrator account.
+- [x] Start the API in Development.
+- [x] Validate the database health check.
+- [x] Validate JWT login and refresh-token issuance.
+- [x] Start the React frontend.
+- [x] Validate authenticated Dashboard, Records, Documents and Audit navigation.
+- [x] Confirm database-backed dashboard metrics and SQL Server audit events.
+- [x] Disable the administrator bootstrap after initialization.
+
 ## Current milestone
 
-**Feature construction complete.**
+**ArchiveCore reconstruction complete and locally validated.**
 
-The next milestone is **local validation**: execute SQL scripts, configure secrets, restore/build, start the stack and fix any runtime or environment-specific findings.
+The project is now considered closed for portfolio purposes. Future work should be limited to intentional maintenance, deployment validation or a new feature scope.

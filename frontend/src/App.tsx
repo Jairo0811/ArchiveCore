@@ -47,6 +47,7 @@ type SqlLabQueryDefinition = {
   legacySql: string;
   modernSql: string;
   description: string;
+  sourcePath: string;
 };
 
 type SqlLabQueryResult = {
@@ -579,8 +580,14 @@ function SqlLab({ token }: { token: string }) {
                 </div>
                 <pre className="sql-code"><code>{selected.legacySql}</code></pre>
                 <p>
-                  Consulta preservada del proyecto académico original desarrollado
-                  para Bases de Datos Avanzadas.
+                  Consulta preservada literalmente del proyecto académico original
+                  desarrollado para Bases de Datos Avanzadas.
+                </p>
+                <p className="sql-source-path">
+                  Fuente canónica: <code>{selected.sourcePath}</code>
+                </p>
+                <p className="sql-privacy-note">
+                  Los INSERT históricos y sus datos de ejemplo no se exponen en esta interfaz.
                 </p>
               </article>
 

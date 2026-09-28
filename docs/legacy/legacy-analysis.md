@@ -73,3 +73,8 @@ The SQL Lab treats this file as the canonical legacy source for the original rea
 - `SELECT * FROM Usuarios`
 
 The historical `INSERT` statements are preserved only in the legacy artifact. Their identity/contact values are intentionally not rendered by the modern application's SQL Lab.
+
+
+## Public release note
+
+The canonical legacy artifact is preserved for historical accuracy inside the private repository. Before making the repository public, review the historical `INSERT` statements and publish a sanitized legacy copy if necessary so identity/contact data from the original academic artifact is not exposed.

@@ -32,7 +32,7 @@ ArchiveCore mantiene a **SQL Server como núcleo técnico del sistema**, incorpo
 | 🏫 Institución | **Instituto Tecnológico de Las Américas (ITLA)** |
 | 📖 Asignatura | **Bases de Datos Avanzadas (SOF-008)** |
 | 👨‍🏫 Profesor | **Carlos Caraballos** |
-| 📅 Período académico | **Pendiente de documentar en el repositorio** |
+| 📅 Período académico | **2017-C1** |
 | 📁 Artefacto original | **Proyecto de base de datos en SQL Server** |
 | 🛠️ Reconstrucción moderna | **2026** |
 

@@ -47,11 +47,14 @@ button, input { font: inherit; }
   backdrop-filter: blur(22px);
 }
 .login-logo {
-  width: 96px;
-  height: 96px;
+  display: block;
   object-fit: contain;
-  filter: drop-shadow(0 16px 24px rgba(0, 210, 230, .16));
-  margin-bottom: 18px;
+  filter: drop-shadow(0 16px 28px rgba(0, 210, 230, .18));
+}
+.login-logo-full {
+  width: min(360px, 100%);
+  height: auto;
+  margin: 0 auto 10px;
 }
 h1,h2,h3,p { margin-top: 0; }
 h1 { font-size: 44px; margin-bottom: 8px; letter-spacing: -.04em; }

@@ -41,6 +41,20 @@ type AuditEventSummary = {
   createdAtUtc: string;
 };
 
+type SqlLabQueryDefinition = {
+  key: string;
+  title: string;
+  legacySql: string;
+  modernSql: string;
+  description: string;
+};
+
+type SqlLabQueryResult = {
+  query: SqlLabQueryDefinition;
+  columns: string[];
+  rows: Record<string, unknown>[];
+};
+
 const STORAGE_KEY = "archivecore.auth";
 
 function readAuth(): AuthResponse | null {
@@ -192,7 +206,10 @@ function Shell({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void })
           <NavLink to="/records"><Icon name="folder" /> <span>Expedientes</span></NavLink>
           <NavLink to="/documents"><Icon name="file" /> <span>Documentos</span></NavLink>
           {auth.user.roles.includes("Administrator") && (
-            <NavLink to="/audit"><Icon name="chart" /> <span>Auditoría</span></NavLink>
+            <>
+              <NavLink to="/audit"><Icon name="chart" /> <span>Auditoría</span></NavLink>
+              <NavLink to="/sql-lab"><Icon name="database" /> <span>SQL Lab SOF-008</span></NavLink>
+            </>
           )}
         </nav>
 
@@ -219,6 +236,14 @@ function Shell({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void })
           <Route path="/records" element={<Records token={auth.accessToken} />} />
           <Route path="/documents" element={<Documents token={auth.accessToken} />} />
           <Route path="/audit" element={<Audit token={auth.accessToken} />} />
+          <Route
+            path="/sql-lab"
+            element={
+              auth.user.roles.includes("Administrator")
+                ? <SqlLab token={auth.accessToken} />
+                : <Navigate to="/" replace />
+            }
+          />
         </Routes>
       </main>
     </div>
@@ -485,6 +510,156 @@ function Audit({ token }: { token: string }) {
         )}
       </section>
     </>
+  );
+}
+
+function SqlLab({ token }: { token: string }) {
+  const [selectedKey, setSelectedKey] = useState("legacy-admins");
+
+  const definitionsQuery = useQuery({
+    queryKey: ["sql-lab", "definitions"],
+    queryFn: () => api<SqlLabQueryDefinition[]>("/academic/sql-lab/queries", {}, token),
+  });
+
+  const executionQuery = useQuery({
+    queryKey: ["sql-lab", "execute", selectedKey],
+    queryFn: () => api<SqlLabQueryResult>(
+      `/academic/sql-lab/queries/${encodeURIComponent(selectedKey)}`,
+      {},
+      token
+    ),
+    enabled: false,
+  });
+
+  const definitions = definitionsQuery.data ?? [];
+  const selected = definitions.find((item) => item.key === selectedKey) ?? definitions[0];
+
+  return (
+    <div className="sql-lab-page">
+      <header className="page-header sql-lab-header">
+        <div>
+          <p className="eyebrow subtle">Bases de Datos Avanzadas · SOF-008</p>
+          <h2>Laboratorio SQL</h2>
+          <p className="sql-lab-intro">
+            Consulta el SQL original del proyecto y ejecuta su equivalente moderno
+            sobre ArchiveCoreDb. Las consultas disponibles son predefinidas y de solo lectura.
+          </p>
+        </div>
+        <span className="status-pill"><span className="status-dot" />Modo seguro</span>
+      </header>
+
+      {definitionsQuery.isLoading && <PageState text="Cargando consultas académicas…" />}
+      {definitionsQuery.error && <PageState text="No se pudo cargar el laboratorio SQL." />}
+
+      {!definitionsQuery.isLoading && !definitionsQuery.error && (
+        <>
+          <section className="sql-query-selector">
+            {definitions.map((query) => (
+              <button
+                key={query.key}
+                className={query.key === selectedKey ? "active" : ""}
+                onClick={() => setSelectedKey(query.key)}
+              >
+                <Icon name="database" />
+                <span>{query.title}</span>
+              </button>
+            ))}
+          </section>
+
+          {selected && (
+            <section className="sql-lab-grid">
+              <article className="sql-query-card legacy">
+                <div className="sql-card-head">
+                  <div>
+                    <span className="sql-badge">LEGACY</span>
+                    <h3>Consulta original</h3>
+                  </div>
+                  <span>DataBaseProject</span>
+                </div>
+                <pre className="sql-code"><code>{selected.legacySql}</code></pre>
+                <p>
+                  Consulta preservada del proyecto académico original desarrollado
+                  para Bases de Datos Avanzadas.
+                </p>
+              </article>
+
+              <article className="sql-query-card modern">
+                <div className="sql-card-head">
+                  <div>
+                    <span className="sql-badge modern">ARCHIVECORE</span>
+                    <h3>Equivalente moderno</h3>
+                  </div>
+                  <span>ArchiveCoreDb</span>
+                </div>
+                <pre className="sql-code"><code>{selected.modernSql}</code></pre>
+                <p>{selected.description}</p>
+                <button
+                  className="primary compact"
+                  disabled={executionQuery.isFetching}
+                  onClick={() => executionQuery.refetch()}
+                >
+                  {executionQuery.isFetching ? "Ejecutando…" : "Ejecutar consulta"}
+                </button>
+              </article>
+            </section>
+          )}
+
+          <section className="sql-result-card">
+            <div className="records-panel-head">
+              <div>
+                <h3>Resultado</h3>
+                <span>Datos reales leídos desde SQL Server</span>
+              </div>
+              {executionQuery.data && (
+                <span className="sql-row-count">
+                  {executionQuery.data.rows.length} fila(s)
+                </span>
+              )}
+            </div>
+
+            {executionQuery.isFetching && <PageState text="Ejecutando consulta…" />}
+            {executionQuery.error && <PageState text="No se pudo ejecutar la consulta académica." />}
+            {!executionQuery.isFetching && !executionQuery.error && !executionQuery.data && (
+              <PageState text="Selecciona una consulta y presiona Ejecutar consulta." />
+            )}
+
+            {executionQuery.data && (
+              <div className="sql-result-table">
+                <table>
+                  <thead>
+                    <tr>
+                      {executionQuery.data.columns.map((column) => <th key={column}>{column}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {executionQuery.data.rows.map((row, index) => (
+                      <tr key={index}>
+                        {executionQuery.data!.columns.map((column) => (
+                          <td key={column}>
+                            {row[column] === null || row[column] === undefined
+                              ? "NULL"
+                              : typeof row[column] === "boolean"
+                                ? (row[column] ? "Sí" : "No")
+                                : String(row[column])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {executionQuery.data.rows.length === 0 && (
+                      <tr>
+                        <td colSpan={executionQuery.data.columns.length || 1} className="empty">
+                          La consulta no devolvió filas.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+    </div>
   );
 }
 

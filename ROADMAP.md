@@ -122,3 +122,12 @@
 **ArchiveCore reconstruction complete and locally validated.**
 
 The project is now considered closed for portfolio purposes. Future work should be limited to intentional maintenance, deployment validation or a new feature scope.
+
+
+## Project freeze
+
+**Status: FROZEN — portfolio release**
+
+ArchiveCore has completed its reconstruction, local integration validation, academic SQL Lab integration and final branding pass.
+
+There is no active feature-development milestone after this point. The project should only be reopened for corrective maintenance, security fixes, compatibility work or an explicit new scope decision.

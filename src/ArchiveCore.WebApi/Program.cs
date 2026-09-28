@@ -105,6 +105,7 @@ app.MapDocumentEndpoints();
 app.MapWorkflowEndpoints();
 app.MapAuditEndpoints();
 app.MapCatalogEndpoints();
+app.MapAcademicSqlLabEndpoints();
 app.MapHealthChecks("/health");
 
 app.Run();

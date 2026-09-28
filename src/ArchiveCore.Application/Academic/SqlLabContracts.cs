@@ -5,7 +5,8 @@ public sealed record SqlLabQueryDefinition(
     string Title,
     string LegacySql,
     string ModernSql,
-    string Description);
+    string Description,
+    string SourcePath);
 
 public sealed record SqlLabQueryResult(
     SqlLabQueryDefinition Query,

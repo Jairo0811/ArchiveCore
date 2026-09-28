@@ -3,7 +3,7 @@
 # ArchiveCore
 
 <img src="https://img.shields.io/badge/ITLA-SOF--008-0057B8?style=for-the-badge" alt="ITLA SOF-008" />
-<img src="https://img.shields.io/badge/Estado-Reconstrucci%C3%B3n%20moderna-2563EB?style=for-the-badge" alt="Reconstrucción moderna" />
+<img src="https://img.shields.io/badge/Estado-Validado%20localmente-16A34A?style=for-the-badge" alt="Validado localmente" />
 
 <br/><br/>
 
@@ -343,25 +343,27 @@ El detalle completo se encuentra en:
 
 ## 🎯 Estado actual
 
-**La construcción funcional y visual principal del proyecto está completada.**
+**ArchiveCore se encuentra funcionalmente completado y validado localmente.**
 
-El repositorio contiene actualmente:
+La validación integrada confirmó:
 
-- Base de datos avanzada.
-- Backend .NET.
-- Autenticación y autorización.
-- Gestión de expedientes.
-- Gestión documental.
-- Versionado.
-- Workflow.
-- Auditoría.
-- Dashboard React.
-- Interfaz visual alineada con la identidad ArchiveCore.
-- Docker.
-- Pruebas.
-- Integración continua.
+- Restauración y compilación correcta de la solución .NET 10.
+- Build de producción correcto del frontend React + TypeScript + Vite.
+- Ejecución completa de los scripts de `ArchiveCoreDb`.
+- Validación satisfactoria de constraints, índices, vistas, procedimientos, triggers y catálogos.
+- Health check de la API con respuesta `200 OK / Healthy`.
+- Bootstrap seguro del primer administrador.
+- Inicio de sesión JWT y emisión de access/refresh tokens.
+- Integración frontend → API → Entity Framework Core → SQL Server.
+- Dashboard operativo.
+- Navegación y consulta de expedientes.
+- Consulta de documentos por expediente.
+- Vista de auditoría con eventos generados por triggers de SQL Server.
+- Bootstrap administrativo desactivado después de crear la cuenta inicial.
 
-La siguiente etapa corresponde a la **validación local completa**, donde se probará el sistema en ejecución con SQL Server, backend y frontend trabajando de manera integrada.
+El repositorio conserva además Docker, pruebas automatizadas, GitHub Actions y documentación de seguridad para futuras ejecuciones o despliegues.
+
+A partir de esta validación, ArchiveCore queda **cerrado como reconstrucción académica moderna y proyecto de portafolio**, salvo mantenimiento correctivo o mejoras futuras deliberadas.
 
 ## 🧭 Continuidad académica
 

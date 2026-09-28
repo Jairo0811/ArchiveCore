@@ -108,6 +108,15 @@
 - [x] Confirm database-backed dashboard metrics and SQL Server audit events.
 - [x] Disable the administrator bootstrap after initialization.
 
+## Phase 11 — Academic SQL Lab ✅
+
+- [x] Preserve the original SOF-008 SELECT queries inside the modern application.
+- [x] Map legacy Administrador to Users + Roles + UserRoles.
+- [x] Map legacy Usuarios to dbo.Users.
+- [x] Provide administrator-only predefined read-only query execution.
+- [x] Display legacy SQL, modern SQL and live SQL Server results side by side.
+- [x] Keep arbitrary SQL execution disabled.
+
 ## Current milestone
 
 **ArchiveCore reconstruction complete and locally validated.**

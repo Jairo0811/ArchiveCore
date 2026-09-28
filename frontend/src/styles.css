@@ -541,3 +541,116 @@ tbody tr:hover { background: rgba(25,70,94,.12); }
   .search-shell { width: 100%; }
   .table-card { overflow-x: auto; }
 }
+
+
+/* Academic SQL Lab */
+.sql-lab-page { max-width: 1600px; margin: 0 auto; }
+.sql-lab-header { align-items: flex-start; }
+.sql-lab-intro {
+  max-width: 780px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+.sql-query-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.sql-query-selector button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #20465d;
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #92b4c7;
+  background: #081927;
+  cursor: pointer;
+  font-weight: 700;
+}
+.sql-query-selector button:hover,
+.sql-query-selector button.active {
+  color: #effcff;
+  border-color: #2f829f;
+  background: linear-gradient(135deg, rgba(30,133,169,.28), rgba(13,53,77,.7));
+}
+.sql-query-selector button.active .icon { color: var(--cyan); }
+.sql-lab-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.sql-query-card,
+.sql-result-card {
+  border: 1px solid #173f58;
+  border-radius: 14px;
+  background: #091a28;
+  overflow: hidden;
+}
+.sql-query-card { padding: 22px; }
+.sql-query-card.legacy {
+  background: linear-gradient(145deg, rgba(63,49,31,.22), #091a28 42%);
+}
+.sql-query-card.modern {
+  background: linear-gradient(145deg, rgba(20,101,122,.23), #091a28 42%);
+}
+.sql-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.sql-card-head h3 { margin: 7px 0 0; }
+.sql-card-head > span { color: #617f91; font-size: 11px; font-family: Consolas, monospace; }
+.sql-badge {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #6d5940;
+  color: #d8b878;
+  background: rgba(140,101,44,.09);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+.sql-badge.modern {
+  border-color: #26738a;
+  color: #56dff0;
+  background: rgba(31,168,187,.08);
+}
+.sql-code {
+  min-height: 92px;
+  max-height: 310px;
+  overflow: auto;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid #16384d;
+  border-radius: 10px;
+  background: #05111b;
+  color: #b9e5ef;
+  font: 12px/1.65 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  white-space: pre-wrap;
+}
+.sql-query-card > p {
+  color: #8eabb9;
+  line-height: 1.65;
+  font-size: 13px;
+}
+.sql-row-count {
+  color: #55dec9 !important;
+  font-weight: 800;
+}
+.sql-result-table { overflow-x: auto; }
+.sql-result-card td {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .sql-lab-grid { grid-template-columns: 1fr; }
+}

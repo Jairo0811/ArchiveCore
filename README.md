@@ -180,6 +180,8 @@ De esta forma, el proyecto mantiene su origen académico sin conservar las limit
 - Ejecución real contra SQL Server desde una sección protegida para administradores.
 - Equivalencia documentada entre `Administrador` y `Users + Roles + UserRoles`.
 - Equivalencia documentada entre `Usuarios` y `dbo.Users`.
+- Fuente legacy canónica: `docs/legacy/DatabaseProject-original.sql`.
+- El SQL Lab muestra literalmente los `SELECT` originales y no expone los datos de los `INSERT` históricos.
 
 ### 📊 Dashboard
 

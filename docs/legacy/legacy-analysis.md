@@ -59,3 +59,17 @@ Some data types also need modernization. For example, telephone numbers should n
 `DatabaseProject-original.sql` is historical material.
 
 It should remain unchanged conceptually and should not be used directly as the production schema. New database work belongs under `/database`.
+
+
+## Canonical source reconciliation
+
+The repository copy at `docs/legacy/DatabaseProject-original.sql` was reconciled against the original `DatabaseProject.sql` source supplied during the 2026 reconstruction.
+
+The SQL structure and academic content match the original artifact. The repository stores the text as UTF-8 for modern tooling compatibility.
+
+The SQL Lab treats this file as the canonical legacy source for the original read queries:
+
+- `SELECT * FROM Administrador`
+- `SELECT * FROM Usuarios`
+
+The historical `INSERT` statements are preserved only in the legacy artifact. Their identity/contact values are intentionally not rendered by the modern application's SQL Lab.

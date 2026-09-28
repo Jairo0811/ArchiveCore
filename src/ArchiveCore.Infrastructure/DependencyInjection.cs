@@ -1,8 +1,10 @@
+using ArchiveCore.Application.Academic;
 using ArchiveCore.Application.Auditing;
 using ArchiveCore.Application.Auth;
 using ArchiveCore.Application.Documents;
 using ArchiveCore.Application.Records;
 using ArchiveCore.Application.Workflow;
+using ArchiveCore.Infrastructure.Academic;
 using ArchiveCore.Infrastructure.Auditing;
 using ArchiveCore.Infrastructure.Documents;
 using ArchiveCore.Infrastructure.Persistence;
@@ -43,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<LocalFileStorage>();
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<ISqlLabService, SqlLabService>();
 
         return services;
     }

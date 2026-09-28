@@ -400,7 +400,7 @@ Ambos proyectos fueron desarrollados bajo la docencia de **Carlos Caraballos**, 
 
 | Orden | Asignatura | Proyecto | Período |
 |---:|---|---|---|
-| 1 | Bases de Datos Avanzadas (SOF-008) | **ArchiveCore** | Pendiente de documentar |
+| 1 | Bases de Datos Avanzadas (SOF-008) | **ArchiveCore** | 2017-C1 |
 | 2 | Minería de Datos e Inteligencia de Negocios (SOF-014) | [**SalesIntel-DW**](https://github.com/Jairo0811/SalesIntel-DW) | 2017-C3 |
 
 La relación entre ambos repositorios es exclusivamente **académica y docente**.

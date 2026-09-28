@@ -210,7 +210,7 @@ function Shell({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void })
           {auth.user.roles.includes("Administrator") && (
             <>
               <NavLink to="/audit"><Icon name="chart" /> <span>Auditoría</span></NavLink>
-              <NavLink to="/sql-lab"><Icon name="database" /> <span>SQL Lab SOF-008</span></NavLink>
+              <NavLink to="/sql-lab"><Icon name="database" /> <span>SQL Lab (SOF-008)</span></NavLink>
             </>
           )}
         </nav>

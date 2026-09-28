@@ -12,7 +12,7 @@ public sealed class SqlLabService(ArchiveCoreDbContext db) : ISqlLabService
         new(
             "legacy-admins",
             "Administradores — consulta original",
-            "SELECT * FROM Administrador;",
+            "SELECT * FROM Administrador",
             """
             SELECT
                 u.UserId AS IdAdmin,
@@ -26,12 +26,13 @@ public sealed class SqlLabService(ArchiveCoreDbContext db) : ISqlLabService
             WHERE r.Name = N'Administrator'
             ORDER BY u.UserId;
             """,
-            "La tabla Administrador del proyecto original evolucionó a Users + Roles + UserRoles. Esta consulta recupera los usuarios que actualmente poseen el rol Administrator."
+            "La tabla Administrador del proyecto original evolucionó a Users + Roles + UserRoles. Esta consulta recupera los usuarios que actualmente poseen el rol Administrator.",
+            "docs/legacy/DatabaseProject-original.sql"
         ),
         new(
             "legacy-users",
             "Usuarios — consulta original",
-            "SELECT * FROM Usuarios;",
+            "SELECT * FROM Usuarios",
             """
             SELECT
                 u.UserId AS IdUser,
@@ -44,7 +45,8 @@ public sealed class SqlLabService(ArchiveCoreDbContext db) : ISqlLabService
             FROM dbo.Users u
             ORDER BY u.UserId;
             """,
-            "La tabla Usuarios original se consolidó en dbo.Users. El modelo moderno elimina duplicación de identidad y separa los roles mediante relaciones normalizadas."
+            "La tabla Usuarios original se consolidó en dbo.Users. El modelo moderno elimina duplicación de identidad y separa los roles mediante relaciones normalizadas.",
+            "docs/legacy/DatabaseProject-original.sql"
         )
     ];
 

@@ -3,7 +3,7 @@
 # ArchiveCore
 
 <img src="https://img.shields.io/badge/ITLA-SOF--008-0057B8?style=for-the-badge" alt="ITLA SOF-008" />
-<img src="https://img.shields.io/badge/Estado-Validado%20localmente-16A34A?style=for-the-badge" alt="Validado localmente" />
+<img src="https://img.shields.io/badge/Estado-Congelado%20para%20portafolio-64748B?style=for-the-badge" alt="Congelado para portafolio" />
 
 <br/><br/>
 
@@ -376,6 +376,19 @@ La validación integrada confirmó:
 El repositorio conserva además Docker, pruebas automatizadas, GitHub Actions y documentación de seguridad para futuras ejecuciones o despliegues.
 
 A partir de esta validación, ArchiveCore queda **cerrado como reconstrucción académica moderna y proyecto de portafolio**, salvo mantenimiento correctivo o mejoras futuras deliberadas.
+
+## 🧊 Estado de mantenimiento
+
+**ArchiveCore está congelado como proyecto académico restaurado para portafolio.**
+
+No existe desarrollo activo planificado. La rama `main` representa la versión final validada de la reconstrucción y solo debería modificarse ante:
+
+- correcciones críticas,
+- ajustes de seguridad,
+- problemas de compatibilidad,
+- o una decisión explícita de reabrir el proyecto.
+
+La evolución histórica se conserva en las ramas de fase y en la documentación del repositorio.
 
 ## 🧭 Continuidad académica
 

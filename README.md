@@ -172,6 +172,15 @@ De esta forma, el proyecto mantiene su origen académico sin conservar las limit
   - tipo de acción,
   - rango de fechas.
 
+### 🧪 Laboratorio SQL — SOF-008
+
+- Integración de las consultas académicas originales dentro de la aplicación moderna.
+- Comparación visual entre el SQL legado y su equivalente en `ArchiveCoreDb`.
+- Consultas predefinidas de solo lectura.
+- Ejecución real contra SQL Server desde una sección protegida para administradores.
+- Equivalencia documentada entre `Administrador` y `Users + Roles + UserRoles`.
+- Equivalencia documentada entre `Usuarios` y `dbo.Users`.
+
 ### 📊 Dashboard
 
 El panel principal muestra indicadores operativos como:
@@ -359,6 +368,7 @@ La validación integrada confirmó:
 - Navegación y consulta de expedientes.
 - Consulta de documentos por expediente.
 - Vista de auditoría con eventos generados por triggers de SQL Server.
+- Laboratorio SQL SOF-008 con consultas originales y equivalentes modernas ejecutables.
 - Bootstrap administrativo desactivado después de crear la cuenta inicial.
 
 El repositorio conserva además Docker, pruebas automatizadas, GitHub Actions y documentación de seguridad para futuras ejecuciones o despliegues.

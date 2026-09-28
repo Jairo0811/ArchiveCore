@@ -160,10 +160,11 @@ function LoginPage({ onLogin }: { onLogin: (value: AuthResponse) => void }) {
   return (
     <main className="login-page">
       <section className="login-card">
-        <img className="login-logo" src="/archivecore-mark.svg" alt="ArchiveCore" />
-        <p className="eyebrow">Document & Records Management</p>
-        <h1>Archive<span>Core</span></h1>
-        <p className="muted">Información segura, trazable y bajo control.</p>
+        <img
+          className="login-logo login-logo-full"
+          src="/archivecore-logo-full.png"
+          alt="ArchiveCore — Documents, Data, Audit, Trust"
+        />
 
         <form onSubmit={submit}>
           <label>
@@ -194,7 +195,7 @@ function Shell({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void })
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src="/archivecore-mark.svg" alt="" />
+          <img src="/archivecore-icon.png" alt="ArchiveCore" />
           <div>
             <strong>ArchiveCore</strong>
             <small>Control documental</small>

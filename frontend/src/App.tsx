@@ -130,8 +130,14 @@ function LoginPage({ onLogin }: { onLogin: (value: AuthResponse) => void }) {
       const result = await login(email, password);
       onLogin(result);
       navigate("/");
-    } catch {
-      setError("No pudimos iniciar sesión. Verifica tus credenciales.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+
+      if (message.includes("Failed to fetch") || message.includes("NetworkError")) {
+        setError("No se pudo conectar con la API de ArchiveCore.");
+      } else {
+        setError("No pudimos iniciar sesión. Verifica tus credenciales.");
+      }
     } finally {
       setBusy(false);
     }

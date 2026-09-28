@@ -1,6 +1,8 @@
 <div align="center">
 
-# ArchiveCore
+<p align="center">
+  <img src="docs/images/archivecore-logo.png" alt="Logo de ArchiveCore" width="720" />
+</p>
 
 <img src="https://img.shields.io/badge/ITLA-SOF--008-0057B8?style=for-the-badge" alt="ITLA SOF-008" />
 <img src="https://img.shields.io/badge/Estado-Congelado%20para%20portafolio-64748B?style=for-the-badge" alt="Congelado para portafolio" />

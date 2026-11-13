@@ -15,8 +15,11 @@ jobs:
       - run: dotnet build ArchiveCore.slnx -c Release --no-restore 2>&1 | tail -30
       - run: dotnet test ArchiveCore.slnx -c Release --no-build 2>&1 | tail -15 || true
       - run: dotnet list ArchiveCore.slnx package --vulnerable --include-transitive || true
-      - run: dotnet list ArchiveCore.slnx package --outdated || true
-      - run: |
+      - run: dotnet list ArchiveCore.slnx package --outdated --highest-patch || true
+      - run: dotnet list ArchiveCore.slnx package --include-transitive | grep -i -E 'SqlClient|Pkcs|IdentityModel|Azure' || true
+      - run: for p in Testcontainers.MsSql Microsoft.Data.SqlClient System.Security.Cryptography.Pkcs Microsoft.AspNetCore.Mvc.Testing Microsoft.EntityFrameworkCore.SqlServer xunit.runner.visualstudio coverlet.collector Microsoft.NET.Test.Sdk xunit; do dotnet package search $p --exact-match --format json | python3 -c "import json,sys; d=json.load(sys.stdin); vs=[v['version'] for r in d['searchResult'] for p in r['packages'] for v in p.get('versions',[])] ; print('$p', vs[-12:])" || true; done
+      - if: false
+        run: |
           which sqlcmd || true; sqlcmd --version || true; ls /opt/mssql-tools*/bin 2>/dev/null || true
           docker --version; docker compose version
           docker pull -q mcr.microsoft.com/mssql/server:2022-latest

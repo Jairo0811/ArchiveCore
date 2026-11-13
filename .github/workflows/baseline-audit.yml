@@ -1,0 +1,25 @@
+name: Baseline audit (temporary)
+on:
+  push:
+    branches: ["ci/baseline-audit"]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet --info | head -30
+      - run: dotnet restore ArchiveCore.slnx
+      - run: dotnet build ArchiveCore.slnx -c Release --no-restore 2>&1 | tail -30
+      - run: dotnet test ArchiveCore.slnx -c Release --no-build 2>&1 | tail -15 || true
+      - run: dotnet list ArchiveCore.slnx package --vulnerable --include-transitive || true
+      - run: dotnet list ArchiveCore.slnx package --outdated || true
+      - run: |
+          which sqlcmd || true; sqlcmd --version || true; ls /opt/mssql-tools*/bin 2>/dev/null || true
+          docker --version; docker compose version
+          docker pull -q mcr.microsoft.com/mssql/server:2022-latest
+          docker run --rm --entrypoint /bin/bash mcr.microsoft.com/mssql/server:2022-latest -c 'ls /opt/mssql-tools*/bin; id'
+          docker pull -q mcr.microsoft.com/dotnet/aspnet:10.0
+          docker run --rm --entrypoint /bin/sh mcr.microsoft.com/dotnet/aspnet:10.0 -c 'id; echo APP_UID=$APP_UID; which curl wget || true; cat /etc/os-release | head -2'

@@ -1,5 +1,7 @@
 using ArchiveCore.Application.Auth;
 using ArchiveCore.Application.Records;
+using ArchiveCore.WebApi.Http;
+using ArchiveCore.WebApi.Security;
 
 namespace ArchiveCore.WebApi.Endpoints;
 
@@ -9,24 +11,26 @@ public static class RecordEndpoints
     {
         var group = app.MapGroup("/api/v1/records")
             .WithTags("Records")
-            .RequireAuthorization();
+            .RequireAuthorization(AuthorizationPolicies.Readers);
 
         group.MapGet("/", async (
             string? search,
             short? statusId,
             int? assignedToUserId,
+            bool? unassigned,
+            int? page,
+            int? pageSize,
             IRecordService service,
             CancellationToken cancellationToken) =>
-            Results.Ok(await service.ListAsync(search, statusId, assignedToUserId, cancellationToken)));
+            Results.Ok(await service.ListAsync(
+                new RecordQuery(search, statusId, assignedToUserId, unassigned, page, pageSize),
+                cancellationToken)));
 
         group.MapGet("/{recordId:long}", async (
             long recordId,
             IRecordService service,
             CancellationToken cancellationToken) =>
-        {
-            var record = await service.GetAsync(recordId, cancellationToken);
-            return record is null ? Results.NotFound() : Results.Ok(record);
-        });
+            Results.Ok(await service.GetAsync(recordId, cancellationToken)));
 
         group.MapPost("/", async (
             CreateRecordRequest request,
@@ -34,19 +38,10 @@ public static class RecordEndpoints
             ICurrentUser currentUser,
             CancellationToken cancellationToken) =>
         {
-            if (currentUser.UserId is not int actorId)
-                return Results.Unauthorized();
-
-            try
-            {
-                var record = await service.CreateAsync(request, actorId, cancellationToken);
-                return Results.Created($"/api/v1/records/{record.RecordId}", record);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-        });
+            var record = await service.CreateAsync(request, currentUser.RequireActorId(), cancellationToken);
+            return Results.Created($"/api/v1/records/{record.RecordId}", record);
+        })
+        .RequireAuthorization(AuthorizationPolicies.RecordsManagers);
 
         group.MapPut("/{recordId:long}", async (
             long recordId,
@@ -54,13 +49,8 @@ public static class RecordEndpoints
             IRecordService service,
             ICurrentUser currentUser,
             CancellationToken cancellationToken) =>
-        {
-            if (currentUser.UserId is not int actorId)
-                return Results.Unauthorized();
-
-            var record = await service.UpdateAsync(recordId, request, actorId, cancellationToken);
-            return record is null ? Results.NotFound() : Results.Ok(record);
-        });
+            Results.Ok(await service.UpdateAsync(recordId, request, currentUser.RequireActorId(), cancellationToken)))
+        .RequireAuthorization(AuthorizationPolicies.RecordsManagers);
 
         return app;
     }

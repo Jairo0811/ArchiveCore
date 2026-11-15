@@ -5,6 +5,7 @@ using ArchiveCore.Application.Auth;
 using ArchiveCore.Domain.Entities;
 using ArchiveCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,36 +14,65 @@ namespace ArchiveCore.Infrastructure.Security;
 public sealed class AuthService(
     ArchiveCoreDbContext db,
     PasswordService passwordService,
-    IOptions<JwtOptions> jwtOptions) : IAuthService
+    IOptions<JwtOptions> jwtOptions,
+    ICurrentUser currentUser,
+    ILogger<AuthService> logger) : IAuthService
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;
 
-    public async Task<AuthResponse?> LoginAsync(
+    public async Task<AuthResult?> LoginAsync(
         LoginRequest request,
         string? ipAddress,
         CancellationToken cancellationToken)
     {
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        request.Validate();
 
+        var normalizedEmail = request.Email!.Trim().ToLowerInvariant();
+
+        // Users.Email uses a case-insensitive collation, so this comparison is sargable.
         var user = await db.Users
             .Include(x => x.UserRoles)
             .ThenInclude(x => x.Role)
-            .SingleOrDefaultAsync(
-                x => x.Email.ToLower() == normalizedEmail && x.IsActive,
-                cancellationToken);
+            .SingleOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
 
-        if (user is null || !passwordService.Verify(user, user.PasswordHash, request.Password))
+        if (user is null)
+        {
+            // Spend comparable time to reduce user-enumeration timing signals.
+            passwordService.Verify(DummyUser, DummyHash, request.Password!);
+            logger.LogInformation("Login rejected: unknown account");
             return null;
+        }
+
+        if (!passwordService.Verify(user, user.PasswordHash, request.Password!) || !user.IsActive)
+        {
+            logger.LogInformation("Login rejected for user {UserId}", user.UserId);
+            return null;
+        }
 
         return await IssueTokensAsync(user, ipAddress, cancellationToken);
     }
 
-    public async Task<AuthResponse?> RefreshAsync(
-        RefreshRequest request,
+    private void AddSessionAudit(int userId, string actionType, string? ipAddress) =>
+        db.AuditEvents.Add(new AuditEvent
+        {
+            UserId = userId,
+            EntityName = "Users",
+            EntityKey = userId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ActionType = actionType,
+            IpAddress = Truncate(ipAddress),
+            CorrelationId = currentUser.CorrelationId,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+
+    public async Task<AuthResult?> RefreshAsync(
+        string? refreshToken,
         string? ipAddress,
         CancellationToken cancellationToken)
     {
-        var tokenHash = TokenUtilities.HashToken(request.RefreshToken);
+        if (string.IsNullOrWhiteSpace(refreshToken) || refreshToken.Length > 512)
+            return null;
+
+        var tokenHash = TokenUtilities.HashToken(refreshToken);
 
         var storedToken = await db.RefreshTokens
             .Include(x => x.User)
@@ -55,150 +85,124 @@ public sealed class AuthService(
             storedToken.ExpiresAtUtc <= DateTime.UtcNow ||
             !storedToken.User.IsActive)
         {
+            logger.LogInformation("Refresh rejected (unknown, expired, revoked or inactive)");
             return null;
         }
 
+        var now = DateTime.UtcNow;
         var rawReplacement = TokenUtilities.CreateRefreshToken();
         var replacement = new RefreshToken
         {
             UserId = storedToken.UserId,
             TokenHash = TokenUtilities.HashToken(rawReplacement),
-            ExpiresAtUtc = DateTime.UtcNow.AddDays(_jwt.RefreshTokenDays),
-            CreatedAtUtc = DateTime.UtcNow,
-            CreatedByIp = ipAddress
+            ExpiresAtUtc = now.AddDays(_jwt.RefreshTokenDays),
+            CreatedAtUtc = now,
+            CreatedByIp = Truncate(ipAddress)
         };
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        // Revoke-first with a guarded update so two concurrent refreshes cannot both rotate the same token.
+        var revoked = await db.RefreshTokens
+            .Where(x => x.RefreshTokenId == storedToken.RefreshTokenId && x.RevokedAtUtc == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.RevokedAtUtc, now)
+                .SetProperty(x => x.RevokedByIp, Truncate(ipAddress)), cancellationToken);
+
+        if (revoked == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return null;
+        }
 
         db.RefreshTokens.Add(replacement);
         await db.SaveChangesAsync(cancellationToken);
 
-        storedToken.RevokedAtUtc = DateTime.UtcNow;
-        storedToken.RevokedByIp = ipAddress;
-        storedToken.ReplacedByTokenId = replacement.RefreshTokenId;
-        await db.SaveChangesAsync(cancellationToken);
+        await db.RefreshTokens
+            .Where(x => x.RefreshTokenId == storedToken.RefreshTokenId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.ReplacedByTokenId, replacement.RefreshTokenId), cancellationToken);
 
-        return BuildAuthResponse(storedToken.User, rawReplacement, replacement.ExpiresAtUtc);
+        await transaction.CommitAsync(cancellationToken);
+
+        return BuildResult(storedToken.User, rawReplacement, replacement.ExpiresAtUtc);
     }
 
     public async Task RevokeAsync(
-        string refreshToken,
+        string? refreshToken,
         string? ipAddress,
         CancellationToken cancellationToken)
     {
-        var tokenHash = TokenUtilities.HashToken(refreshToken);
-
-        var storedToken = await db.RefreshTokens
-            .SingleOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
-
-        if (storedToken is null || storedToken.RevokedAtUtc is not null)
+        if (string.IsNullOrWhiteSpace(refreshToken) || refreshToken.Length > 512)
             return;
 
-        storedToken.RevokedAtUtc = DateTime.UtcNow;
-        storedToken.RevokedByIp = ipAddress;
-        await db.SaveChangesAsync(cancellationToken);
-    }
+        var tokenHash = TokenUtilities.HashToken(refreshToken);
+        var now = DateTime.UtcNow;
 
-    public async Task<UserSummary> CreateUserAsync(
-        CreateUserRequest request,
-        int performedByUserId,
-        CancellationToken cancellationToken)
-    {
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var userId = await db.RefreshTokens
+            .Where(x => x.TokenHash == tokenHash && x.RevokedAtUtc == null)
+            .Select(x => (int?)x.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
 
-        if (await db.Users.AnyAsync(x => x.Email.ToLower() == normalizedEmail, cancellationToken))
-            throw new InvalidOperationException("A user with that email already exists.");
+        if (userId is null)
+            return;
 
-        var roleNames = request.Roles
-            .Select(x => x.Trim())
-            .Where(x => x.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        var revoked = await db.RefreshTokens
+            .Where(x => x.TokenHash == tokenHash && x.RevokedAtUtc == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.RevokedAtUtc, now)
+                .SetProperty(x => x.RevokedByIp, Truncate(ipAddress)), cancellationToken);
 
-        var roles = await db.Roles
-            .Where(x => roleNames.Contains(x.Name))
-            .ToListAsync(cancellationToken);
-
-        if (roles.Count != roleNames.Length)
-            throw new InvalidOperationException("One or more requested roles do not exist.");
-
-        var user = new User
+        if (revoked > 0)
         {
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            Email = normalizedEmail,
-            NationalId = request.NationalId?.Trim(),
-            Phone = request.Phone?.Trim(),
-            BirthDate = request.BirthDate,
-            IsActive = true,
-            CreatedAtUtc = DateTime.UtcNow
-        };
-
-        user.PasswordHash = passwordService.Hash(user, request.Password);
-
-        foreach (var role in roles)
-        {
-            user.UserRoles.Add(new UserRole
-            {
-                Role = role,
-                AssignedByUserId = performedByUserId,
-                AssignedAtUtc = DateTime.UtcNow
-            });
+            AddSessionAudit(userId.Value, "LOGOUT", ipAddress);
+            await db.SaveChangesAsync(cancellationToken);
         }
-
-        db.Users.Add(user);
-        await db.SaveChangesAsync(cancellationToken);
-
-        return ToSummary(user);
     }
 
-    private async Task<AuthResponse> IssueTokensAsync(
+    private async Task<AuthResult> IssueTokensAsync(
         User user,
         string? ipAddress,
         CancellationToken cancellationToken)
     {
         var rawRefreshToken = TokenUtilities.CreateRefreshToken();
-        var refreshExpires = DateTime.UtcNow.AddDays(_jwt.RefreshTokenDays);
+        var now = DateTime.UtcNow;
+        var refreshExpires = now.AddDays(_jwt.RefreshTokenDays);
 
         db.RefreshTokens.Add(new RefreshToken
         {
             UserId = user.UserId,
             TokenHash = TokenUtilities.HashToken(rawRefreshToken),
             ExpiresAtUtc = refreshExpires,
-            CreatedAtUtc = DateTime.UtcNow,
-            CreatedByIp = ipAddress
+            CreatedAtUtc = now,
+            CreatedByIp = Truncate(ipAddress)
         });
 
+        AddSessionAudit(user.UserId, "LOGIN", ipAddress);
         await db.SaveChangesAsync(cancellationToken);
 
-        return BuildAuthResponse(user, rawRefreshToken, refreshExpires);
+        return BuildResult(user, rawRefreshToken, refreshExpires);
     }
 
-    private AuthResponse BuildAuthResponse(
-        User user,
-        string rawRefreshToken,
-        DateTime refreshExpiresAtUtc)
+    private AuthResult BuildResult(User user, string rawRefreshToken, DateTime refreshExpiresAtUtc)
     {
-        if (string.IsNullOrWhiteSpace(_jwt.SigningKey) || _jwt.SigningKey.Length < 32)
-            throw new InvalidOperationException("JWT signing key must be configured and at least 32 characters.");
-
         var now = DateTime.UtcNow;
         var accessExpires = now.AddMinutes(_jwt.AccessTokenMinutes);
-        var roles = user.UserRoles.Select(x => x.Role.Name).Distinct().ToArray();
+        var roles = user.UserRoles.Select(x => x.Role.Name).Distinct(StringComparer.Ordinal).ToArray();
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+            new(JwtRegisteredClaimNames.Sub, user.UserId.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new(ClaimTypes.Email, user.Email)
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
         };
 
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(roles.Select(role => new Claim(JwtClaimNames.Role, role)));
 
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.SigningKey)),
             SecurityAlgorithms.HmacSha256);
 
-        var jwt = new JwtSecurityToken(
+        var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
             claims: claims,
@@ -206,21 +210,26 @@ public sealed class AuthService(
             expires: accessExpires,
             signingCredentials: credentials);
 
-        var accessToken = new JwtSecurityTokenHandler().WriteToken(jwt);
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return new AuthResponse(
+        return new AuthResult(
             accessToken,
             accessExpires,
             rawRefreshToken,
             refreshExpiresAtUtc,
-            ToSummary(user));
+            new UserSummary(user.UserId, user.FirstName, user.LastName, user.Email, roles));
     }
 
-    private static UserSummary ToSummary(User user) =>
-        new(
-            user.UserId,
-            user.FirstName,
-            user.LastName,
-            user.Email,
-            user.UserRoles.Select(x => x.Role.Name).Distinct().ToArray());
+    private static string? Truncate(string? ip) =>
+        ip is null ? null : ip.Length <= 45 ? ip : ip[..45];
+
+    private static readonly User DummyUser = new() { Email = "dummy@archivecore.invalid" };
+    private static readonly string DummyHash = new PasswordService().Hash(DummyUser, Guid.NewGuid().ToString("N"));
+}
+
+public static class JwtClaimNames
+{
+    public const string Role = "role";
+    public const string Subject = JwtRegisteredClaimNames.Sub;
+    public const string Email = JwtRegisteredClaimNames.Email;
 }

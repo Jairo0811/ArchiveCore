@@ -1,0 +1,14 @@
+.git
+.github
+**/bin
+**/obj
+**/node_modules
+frontend/dist
+**/*.tsbuildinfo
+**/TestResults
+tests
+docs
+.env
+.env.*
+!.env.example
+storage

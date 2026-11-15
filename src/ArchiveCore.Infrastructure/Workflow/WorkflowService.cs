@@ -1,28 +1,43 @@
+using System.Data;
+using ArchiveCore.Application.Common;
 using ArchiveCore.Application.Workflow;
-using ArchiveCore.Domain.Entities;
 using ArchiveCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArchiveCore.Infrastructure.Workflow;
 
+/// <summary>
+/// Workflow mutations are executed by the transactional stored procedures
+/// (dbo.sp_TransferRecord, dbo.sp_CloseRecord); EF Core is only used to read history.
+/// </summary>
 public sealed class WorkflowService(ArchiveCoreDbContext db) : IWorkflowService
 {
     public async Task<IReadOnlyCollection<MovementSummary>> GetHistoryAsync(
         long recordId,
-        CancellationToken cancellationToken) =>
-        await db.RecordMovements.AsNoTracking()
+        CancellationToken cancellationToken)
+    {
+        if (!await db.Records.AnyAsync(x => x.RecordId == recordId, cancellationToken))
+            throw new ResourceNotFoundException("El expediente no existe.");
+
+        return await db.RecordMovements.AsNoTracking()
             .Where(x => x.RecordId == recordId)
             .OrderByDescending(x => x.PerformedAtUtc)
+            .ThenByDescending(x => x.RecordMovementId)
             .Select(x => new MovementSummary(
                 x.RecordMovementId,
                 x.RecordId,
+                x.MovementType.Code,
                 x.MovementType.Name,
                 x.FromUserId,
+                x.FromUser == null ? null : x.FromUser.FirstName + " " + x.FromUser.LastName,
                 x.ToUserId,
+                x.ToUser == null ? null : x.ToUser.FirstName + " " + x.ToUser.LastName,
                 x.PerformedByUserId,
+                x.PerformedByUser.FirstName + " " + x.PerformedByUser.LastName,
                 x.Notes,
                 x.PerformedAtUtc))
             .ToArrayAsync(cancellationToken);
+    }
 
     public async Task TransferAsync(
         long recordId,
@@ -30,31 +45,18 @@ public sealed class WorkflowService(ArchiveCoreDbContext db) : IWorkflowService
         int actorUserId,
         CancellationToken cancellationToken)
     {
-        var record = await db.Records.SingleOrDefaultAsync(
-            x => x.RecordId == recordId,
-            cancellationToken)
-            ?? throw new InvalidOperationException("Record does not exist.");
+        request.Validate();
 
-        var movementType = await db.MovementTypes.SingleAsync(
-            x => x.Code == "TRANSFER",
+        await StoredProcedures.ExecuteScalarAsync<long>(
+            db,
+            "dbo.sp_TransferRecord",
+            [
+                StoredProcedures.Param("@RecordId", SqlDbType.BigInt, recordId),
+                StoredProcedures.Param("@ToUserId", SqlDbType.Int, request.ToUserId),
+                StoredProcedures.Param("@PerformedByUserId", SqlDbType.Int, actorUserId),
+                StoredProcedures.Param("@Notes", SqlDbType.NVarChar, NullIfEmpty(request.Notes), 1000)
+            ],
             cancellationToken);
-
-        var fromUserId = record.AssignedToUserId;
-        record.AssignedToUserId = request.ToUserId;
-        record.UpdatedAtUtc = DateTime.UtcNow;
-
-        db.RecordMovements.Add(new RecordMovement
-        {
-            RecordId = recordId,
-            MovementTypeId = movementType.MovementTypeId,
-            FromUserId = fromUserId,
-            ToUserId = request.ToUserId,
-            PerformedByUserId = actorUserId,
-            Notes = request.Notes?.Trim(),
-            PerformedAtUtc = DateTime.UtcNow
-        });
-
-        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task CloseAsync(
@@ -63,34 +65,19 @@ public sealed class WorkflowService(ArchiveCoreDbContext db) : IWorkflowService
         int actorUserId,
         CancellationToken cancellationToken)
     {
-        var record = await db.Records.SingleOrDefaultAsync(
-            x => x.RecordId == recordId,
-            cancellationToken)
-            ?? throw new InvalidOperationException("Record does not exist.");
+        request.Validate();
 
-        var closedStatus = await db.RecordStatuses.SingleAsync(
-            x => x.Code == "CLOSED",
+        await StoredProcedures.ExecuteScalarAsync<long>(
+            db,
+            "dbo.sp_CloseRecord",
+            [
+                StoredProcedures.Param("@RecordId", SqlDbType.BigInt, recordId),
+                StoredProcedures.Param("@PerformedByUserId", SqlDbType.Int, actorUserId),
+                StoredProcedures.Param("@Notes", SqlDbType.NVarChar, NullIfEmpty(request.Notes), 1000)
+            ],
             cancellationToken);
-
-        var movementType = await db.MovementTypes.SingleAsync(
-            x => x.Code == "CLOSE",
-            cancellationToken);
-
-        record.RecordStatusId = closedStatus.RecordStatusId;
-        record.ClosedAtUtc = DateTime.UtcNow;
-        record.UpdatedAtUtc = DateTime.UtcNow;
-
-        db.RecordMovements.Add(new RecordMovement
-        {
-            RecordId = recordId,
-            MovementTypeId = movementType.MovementTypeId,
-            FromUserId = record.AssignedToUserId,
-            ToUserId = record.AssignedToUserId,
-            PerformedByUserId = actorUserId,
-            Notes = request.Notes?.Trim(),
-            PerformedAtUtc = DateTime.UtcNow
-        });
-
-        await db.SaveChangesAsync(cancellationToken);
     }
+
+    private static string? NullIfEmpty(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

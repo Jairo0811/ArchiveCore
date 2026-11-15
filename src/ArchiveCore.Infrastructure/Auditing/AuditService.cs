@@ -1,4 +1,5 @@
 using ArchiveCore.Application.Auditing;
+using ArchiveCore.Application.Common;
 using ArchiveCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,42 +7,60 @@ namespace ArchiveCore.Infrastructure.Auditing;
 
 public sealed class AuditService(ArchiveCoreDbContext db) : IAuditService
 {
-    public async Task<IReadOnlyCollection<AuditEventSummary>> SearchAsync(
-        string? entityName,
-        string? entityKey,
-        int? userId,
-        string? actionType,
-        DateTime? fromUtc,
-        DateTime? toUtc,
+    public async Task<PagedResult<AuditEventSummary>> SearchAsync(
+        AuditQuery request,
         CancellationToken cancellationToken)
     {
-        var query = db.AuditEvents.AsNoTracking().AsQueryable();
+        request.Validate();
 
-        if (!string.IsNullOrWhiteSpace(entityName))
+        var page = PageRequest.From(request.Page, request.PageSize, defaultSize: 50, maxSize: 200);
+        var query = db.AuditEvents.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(request.EntityName))
+        {
+            var entityName = request.EntityName.Trim();
             query = query.Where(x => x.EntityName == entityName);
+        }
 
-        if (!string.IsNullOrWhiteSpace(entityKey))
+        if (!string.IsNullOrWhiteSpace(request.EntityKey))
+        {
+            var entityKey = request.EntityKey.Trim();
             query = query.Where(x => x.EntityKey == entityKey);
+        }
 
-        if (userId.HasValue)
-            query = query.Where(x => x.UserId == userId);
+        if (request.UserId.HasValue)
+            query = query.Where(x => x.UserId == request.UserId);
 
-        if (!string.IsNullOrWhiteSpace(actionType))
+        if (!string.IsNullOrWhiteSpace(request.ActionType))
+        {
+            var actionType = request.ActionType.Trim().ToUpperInvariant();
             query = query.Where(x => x.ActionType == actionType);
+        }
 
-        if (fromUtc.HasValue)
-            query = query.Where(x => x.CreatedAtUtc >= fromUtc.Value);
+        if (request.FromUtc is { } fromUtc)
+        {
+            var from = AsUtc(fromUtc);
+            query = query.Where(x => x.CreatedAtUtc >= from);
+        }
 
-        if (toUtc.HasValue)
-            query = query.Where(x => x.CreatedAtUtc < toUtc.Value);
+        if (request.ToUtc is { } toUtc)
+        {
+            var to = AsUtc(toUtc);
+            query = query.Where(x => x.CreatedAtUtc < to);
+        }
 
-        return await query
+        var total = await query.CountAsync(cancellationToken);
+
+        // Old/new JSON snapshots are intentionally not projected: they can contain personal data.
+        var items = await query
             .OrderByDescending(x => x.CreatedAtUtc)
             .ThenByDescending(x => x.AuditEventId)
-            .Take(500)
+            .Skip(page.Skip)
+            .Take(page.PageSize)
             .Select(x => new AuditEventSummary(
                 x.AuditEventId,
                 x.UserId,
+                x.User == null ? null : x.User.FirstName + " " + x.User.LastName,
                 x.EntityName,
                 x.EntityKey,
                 x.ActionType,
@@ -49,7 +68,16 @@ public sealed class AuditService(ArchiveCoreDbContext db) : IAuditService
                 x.IpAddress,
                 x.CorrelationId))
             .ToArrayAsync(cancellationToken);
+
+        return new PagedResult<AuditEventSummary>(items, page.Page, page.PageSize, total);
     }
+
+    private static DateTime AsUtc(DateTime value) => value.Kind switch
+    {
+        DateTimeKind.Local => value.ToUniversalTime(),
+        DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+        _ => value
+    };
 
     public async Task<DashboardSummary> GetDashboardAsync(
         CancellationToken cancellationToken)
@@ -58,15 +86,9 @@ public sealed class AuditService(ArchiveCoreDbContext db) : IAuditService
         var tomorrow = today.AddDays(1);
 
         var activeUsers = await db.Users.CountAsync(x => x.IsActive, cancellationToken);
-        var activeRecords = await db.Records.CountAsync(
-            x => x.ClosedAtUtc == null,
-            cancellationToken);
-        var closedRecords = await db.Records.CountAsync(
-            x => x.ClosedAtUtc != null,
-            cancellationToken);
-        var activeDocuments = await db.Documents.CountAsync(
-            x => !x.IsDeleted,
-            cancellationToken);
+        var activeRecords = await db.Records.CountAsync(x => !x.Status.IsFinal, cancellationToken);
+        var closedRecords = await db.Records.CountAsync(x => x.Status.IsFinal, cancellationToken);
+        var activeDocuments = await db.Documents.CountAsync(x => !x.IsDeleted, cancellationToken);
         var movementsToday = await db.RecordMovements.CountAsync(
             x => x.PerformedAtUtc >= today && x.PerformedAtUtc < tomorrow,
             cancellationToken);
@@ -80,6 +102,7 @@ public sealed class AuditService(ArchiveCoreDbContext db) : IAuditService
             closedRecords,
             activeDocuments,
             movementsToday,
-            auditToday);
+            auditToday,
+            DateTime.UtcNow);
     }
 }

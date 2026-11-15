@@ -1,10 +1,25 @@
 USE ArchiveCoreDb;
 GO
 
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 /* =========================================================
    Audit convention
-   The application/SP layer may set SESSION_CONTEXT('UserId').
-   Triggers fall back to entity creator/uploader where possible.
+
+   The actor is read from SESSION_CONTEXT, which the API sets on
+   every pooled connection open (AuditSessionContextInterceptor)
+   and the stored procedures set explicitly:
+
+     SESSION_CONTEXT('UserId')        -> AuditEvents.UserId
+     SESSION_CONTEXT('IpAddress')     -> AuditEvents.IpAddress
+     SESSION_CONTEXT('CorrelationId') -> AuditEvents.CorrelationId
+
+   Fallback when no actor is present (scripts, bootstrap):
+     - INSERT: the row's creator/uploader is the actor by definition.
+     - UPDATE/DELETE: NULL ("Sistema"). An update is never attributed
+       to the original creator.
    ========================================================= */
 
 CREATE OR ALTER TRIGGER dbo.TR_Records_Audit
@@ -14,10 +29,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @ActorUserId INT = TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId'));
+    DECLARE @IpAddress VARCHAR(45) = TRY_CONVERT(VARCHAR(45), SESSION_CONTEXT(N'IpAddress'));
+    DECLARE @CorrelationId UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'CorrelationId'));
+
     INSERT INTO dbo.AuditEvents
-    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson)
+    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson, IpAddress, CorrelationId)
     SELECT
-        COALESCE(TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId')), i.CreatedByUserId, d.CreatedByUserId),
+        CASE
+            WHEN @ActorUserId IS NOT NULL THEN @ActorUserId
+            WHEN d.RecordId IS NULL THEN i.CreatedByUserId
+            ELSE NULL
+        END,
         N'Records',
         CONVERT(NVARCHAR(200), COALESCE(i.RecordId, d.RecordId)),
         CASE
@@ -34,7 +57,9 @@ BEGIN
             (SELECT i.RecordNumber, i.Title, i.Description, i.RecordStatusId, i.AssignedToUserId,
                     i.OpenedAtUtc, i.ClosedAtUtc
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-        END
+        END,
+        @IpAddress,
+        @CorrelationId
     FROM inserted i
     FULL OUTER JOIN deleted d ON d.RecordId = i.RecordId;
 END
@@ -47,10 +72,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @ActorUserId INT = TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId'));
+    DECLARE @IpAddress VARCHAR(45) = TRY_CONVERT(VARCHAR(45), SESSION_CONTEXT(N'IpAddress'));
+    DECLARE @CorrelationId UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'CorrelationId'));
+
     INSERT INTO dbo.AuditEvents
-    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson)
+    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson, IpAddress, CorrelationId)
     SELECT
-        COALESCE(TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId')), i.CreatedByUserId, d.CreatedByUserId),
+        CASE
+            WHEN @ActorUserId IS NOT NULL THEN @ActorUserId
+            WHEN d.DocumentId IS NULL THEN i.CreatedByUserId
+            ELSE NULL
+        END,
         N'Documents',
         CONVERT(NVARCHAR(200), COALESCE(i.DocumentId, d.DocumentId)),
         CASE
@@ -65,7 +98,9 @@ BEGIN
         CASE WHEN i.DocumentId IS NULL THEN NULL ELSE
             (SELECT i.RecordId, i.DocumentCategoryId, i.DocumentNumber, i.Title, i.Description, i.IsDeleted
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-        END
+        END,
+        @IpAddress,
+        @CorrelationId
     FROM inserted i
     FULL OUTER JOIN deleted d ON d.DocumentId = i.DocumentId;
 END
@@ -78,10 +113,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @ActorUserId INT = TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId'));
+    DECLARE @IpAddress VARCHAR(45) = TRY_CONVERT(VARCHAR(45), SESSION_CONTEXT(N'IpAddress'));
+    DECLARE @CorrelationId UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'CorrelationId'));
+
     INSERT INTO dbo.AuditEvents
-    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson)
+    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson, IpAddress, CorrelationId)
     SELECT
-        COALESCE(TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId')), i.UploadedByUserId, d.UploadedByUserId),
+        CASE
+            WHEN @ActorUserId IS NOT NULL THEN @ActorUserId
+            WHEN d.DocumentVersionId IS NULL THEN i.UploadedByUserId
+            ELSE NULL
+        END,
         N'DocumentVersions',
         CONVERT(NVARCHAR(200), COALESCE(i.DocumentVersionId, d.DocumentVersionId)),
         CASE
@@ -98,7 +141,9 @@ BEGIN
             (SELECT i.DocumentId, i.VersionNumber, i.OriginalFileName, i.StoragePath,
                     i.FileSizeBytes, i.Sha256Hash, i.IsCurrent
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-        END
+        END,
+        @IpAddress,
+        @CorrelationId
     FROM inserted i
     FULL OUTER JOIN deleted d ON d.DocumentVersionId = i.DocumentVersionId;
 END
@@ -111,10 +156,14 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @ActorUserId INT = TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId'));
+    DECLARE @IpAddress VARCHAR(45) = TRY_CONVERT(VARCHAR(45), SESSION_CONTEXT(N'IpAddress'));
+    DECLARE @CorrelationId UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'CorrelationId'));
+
     INSERT INTO dbo.AuditEvents
-    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson)
+    (UserId, EntityName, EntityKey, ActionType, OldValuesJson, NewValuesJson, IpAddress, CorrelationId)
     SELECT
-        TRY_CONVERT(INT, SESSION_CONTEXT(N'UserId')),
+        @ActorUserId,
         N'Users',
         CONVERT(NVARCHAR(200), COALESCE(i.UserId, d.UserId)),
         CASE
@@ -129,7 +178,9 @@ BEGIN
         CASE WHEN i.UserId IS NULL THEN NULL ELSE
             (SELECT i.FirstName, i.LastName, i.NationalId, i.Email, i.Phone, i.BirthDate, i.IsActive
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
-        END
+        END,
+        @IpAddress,
+        @CorrelationId
     FROM inserted i
     FULL OUTER JOIN deleted d ON d.UserId = i.UserId;
 END

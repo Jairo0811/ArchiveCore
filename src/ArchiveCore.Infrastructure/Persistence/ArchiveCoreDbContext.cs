@@ -1,5 +1,6 @@
 using ArchiveCore.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ArchiveCore.Infrastructure.Persistence;
 
@@ -24,4 +25,22 @@ public sealed class ArchiveCoreDbContext(DbContextOptions<ArchiveCoreDbContext> 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ArchiveCoreDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }
+
+    /// <summary>
+    /// Every DATETIME2 column stores UTC (SYSUTCDATETIME / DateTime.UtcNow). Reading them back as
+    /// DateTimeKind.Utc makes the API serialize an explicit "Z" so clients never treat them as local time.
+    /// </summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<NullableUtcDateTimeConverter>();
+    }
+
+    private sealed class UtcDateTimeConverter() : ValueConverter<DateTime, DateTime>(
+        value => value.Kind == DateTimeKind.Local ? value.ToUniversalTime() : value,
+        value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
+    private sealed class NullableUtcDateTimeConverter() : ValueConverter<DateTime?, DateTime?>(
+        value => value.HasValue && value.Value.Kind == DateTimeKind.Local ? value.Value.ToUniversalTime() : value,
+        value => value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : value);
 }

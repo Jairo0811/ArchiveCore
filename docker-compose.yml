@@ -1,30 +1,78 @@
+# ArchiveCore local stack: SQL Server -> one-shot schema initialization -> API -> Nginx + SPA.
+# Secrets come from .env (see .env.example); there are no default credentials.
+name: archivecore
+
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${ARCHIVECORE_SQL_SA_PASSWORD}"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${ARCHIVECORE_SQL_SA_PASSWORD:?Set ARCHIVECORE_SQL_SA_PASSWORD in .env}
     ports:
-      - "1433:1433"
+      - "127.0.0.1:${ARCHIVECORE_SQL_PORT:-1433}:1433"
     volumes:
       - archivecore-sql:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=\"$$MSSQL_SA_PASSWORD\" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1' -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    entrypoint: ["/bin/bash", "/database/docker/init-db.sh"]
+    environment:
+      MSSQL_SA_PASSWORD: ${ARCHIVECORE_SQL_SA_PASSWORD:?Set ARCHIVECORE_SQL_SA_PASSWORD in .env}
+      DB_HOST: db
+    volumes:
+      - ./database:/database:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
 
   api:
     build:
       context: .
       dockerfile: src/ArchiveCore.WebApi/Dockerfile
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__ArchiveCore: "Server=db,1433;Database=ArchiveCoreDb;User Id=sa;Password=${ARCHIVECORE_SQL_SA_PASSWORD};TrustServerCertificate=True"
-      Jwt__SigningKey: "${ARCHIVECORE_JWT_SIGNING_KEY}"
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__ArchiveCore: "Server=db,1433;Database=ArchiveCoreDb;User Id=sa;Password=${ARCHIVECORE_SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=True"
+      Jwt__SigningKey: ${ARCHIVECORE_JWT_SIGNING_KEY:?Set ARCHIVECORE_JWT_SIGNING_KEY in .env}
       Jwt__Issuer: ArchiveCore
       Jwt__Audience: ArchiveCore.Web
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
+      BootstrapAdmin__Enabled: ${ARCHIVECORE_BOOTSTRAP_ADMIN_ENABLED:-false}
+      BootstrapAdmin__FirstName: ${ARCHIVECORE_BOOTSTRAP_ADMIN_FIRST_NAME:-ArchiveCore}
+      BootstrapAdmin__LastName: ${ARCHIVECORE_BOOTSTRAP_ADMIN_LAST_NAME:-Administrator}
+      BootstrapAdmin__Email: ${ARCHIVECORE_BOOTSTRAP_ADMIN_EMAIL:-}
+      BootstrapAdmin__Password: ${ARCHIVECORE_BOOTSTRAP_ADMIN_PASSWORD:-}
+      AllowedHosts: ${ARCHIVECORE_ALLOWED_HOSTS:-localhost;127.0.0.1}
+      # TLS is not terminated in this local stack; put a TLS proxy in front for real deployments.
+      Security__UseHttpsRedirection: "false"
+      Auth__RefreshCookie__Secure: ${ARCHIVECORE_REFRESH_COOKIE_SECURE:-true}
+      # Only Nginx (private Docker networks) may set X-Forwarded-For.
+      ReverseProxy__KnownNetworks__0: 172.16.0.0/12
+      ReverseProxy__KnownNetworks__1: 192.168.0.0/16
+      ReverseProxy__KnownNetworks__2: 10.0.0.0/8
+      DocumentStorage__RootPath: /app/storage/documents
+      DocumentStorage__MaxFileSizeBytes: "20971520"
+    expose:
+      - "8080"
     volumes:
       - archivecore-documents:/app/storage/documents
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
 
   web:
     build:
@@ -33,9 +81,11 @@ services:
       args:
         VITE_API_BASE_URL: /api/v1
     ports:
-      - "5173:80"
+      - "${ARCHIVECORE_WEB_PORT:-5173}:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   archivecore-sql:

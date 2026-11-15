@@ -1,5 +1,7 @@
 using ArchiveCore.Application.Auth;
 using ArchiveCore.Application.Workflow;
+using ArchiveCore.WebApi.Http;
+using ArchiveCore.WebApi.Security;
 
 namespace ArchiveCore.WebApi.Endpoints;
 
@@ -9,7 +11,7 @@ public static class WorkflowEndpoints
     {
         var group = app.MapGroup("/api/v1/records/{recordId:long}/workflow")
             .WithTags("Workflow")
-            .RequireAuthorization();
+            .RequireAuthorization(AuthorizationPolicies.Readers);
 
         group.MapGet("/history", async (
             long recordId,
@@ -17,6 +19,7 @@ public static class WorkflowEndpoints
             CancellationToken cancellationToken) =>
             Results.Ok(await service.GetHistoryAsync(recordId, cancellationToken)));
 
+        // Assigns an unassigned record or transfers it to another active user.
         group.MapPost("/transfer", async (
             long recordId,
             TransferRecordRequest request,
@@ -24,19 +27,10 @@ public static class WorkflowEndpoints
             ICurrentUser currentUser,
             CancellationToken cancellationToken) =>
         {
-            if (currentUser.UserId is not int actorId)
-                return Results.Unauthorized();
-
-            try
-            {
-                await service.TransferAsync(recordId, request, actorId, cancellationToken);
-                return Results.NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-        });
+            await service.TransferAsync(recordId, request, currentUser.RequireActorId(), cancellationToken);
+            return Results.NoContent();
+        })
+        .RequireAuthorization(AuthorizationPolicies.RecordsManagers);
 
         group.MapPost("/close", async (
             long recordId,
@@ -45,19 +39,10 @@ public static class WorkflowEndpoints
             ICurrentUser currentUser,
             CancellationToken cancellationToken) =>
         {
-            if (currentUser.UserId is not int actorId)
-                return Results.Unauthorized();
-
-            try
-            {
-                await service.CloseAsync(recordId, request, actorId, cancellationToken);
-                return Results.NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-        });
+            await service.CloseAsync(recordId, request, currentUser.RequireActorId(), cancellationToken);
+            return Results.NoContent();
+        })
+        .RequireAuthorization(AuthorizationPolicies.RecordsManagers);
 
         return app;
     }

@@ -77,5 +77,28 @@ IF NOT EXISTS (SELECT 1 FROM dbo.RecordStatuses WHERE Code = 'CLOSED')
 IF NOT EXISTS (SELECT 1 FROM dbo.MovementTypes WHERE Code = 'TRANSFER')
     THROW 51043, 'TRANSFER movement type is missing.', 1;
 
+IF NOT EXISTS (SELECT 1 FROM dbo.MovementTypes WHERE Code = 'ASSIGN')
+    THROW 51044, 'ASSIGN movement type is missing.', 1;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.MovementTypes WHERE Code = 'CLOSE')
+    THROW 51045, 'CLOSE movement type is missing.', 1;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE Name = N'RecordsManager')
+    THROW 51046, 'RecordsManager seed role is missing.', 1;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE Name = N'User')
+    THROW 51047, 'User seed role is missing.', 1;
+
+/* Procedures and triggers that modify tables with filtered indexes must be
+   compiled with QUOTED_IDENTIFIER and ANSI_NULLS ON (use sqlcmd -I). */
+IF EXISTS (
+    SELECT 1
+    FROM sys.sql_modules m
+    INNER JOIN sys.objects o ON o.object_id = m.object_id
+    WHERE o.type IN ('P', 'TR')
+      AND (m.uses_quoted_identifier = 0 OR m.uses_ansi_nulls = 0)
+)
+    THROW 51050, 'A procedure or trigger was compiled without QUOTED_IDENTIFIER/ANSI_NULLS ON.', 1;
+
 PRINT 'ArchiveCore database validation passed.';
 GO

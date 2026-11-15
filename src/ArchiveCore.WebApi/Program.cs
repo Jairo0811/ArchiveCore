@@ -1,13 +1,13 @@
-using System.Text;
 using ArchiveCore.Application;
 using ArchiveCore.Application.Auth;
 using ArchiveCore.Infrastructure;
 using ArchiveCore.Infrastructure.Persistence;
 using ArchiveCore.Infrastructure.Security;
 using ArchiveCore.WebApi.Endpoints;
+using ArchiveCore.WebApi.Http;
 using ArchiveCore.WebApi.Security;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,52 +17,35 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
-var jwt = builder.Configuration
-    .GetSection(JwtOptions.SectionName)
-    .Get<JwtOptions>() ?? new JwtOptions();
+builder.Services.AddArchiveCoreAuthentication();
+builder.Services.AddAuthorizationBuilder().AddArchiveCorePolicies();
+builder.Services.AddArchiveCoreRateLimiting();
+builder.Services.AddArchiveCoreCors(builder.Configuration, builder.Environment);
+builder.Services.AddArchiveCoreForwardedHeaders(builder.Configuration);
 
-if (string.IsNullOrWhiteSpace(jwt.SigningKey))
+builder.Services.AddOptions<RefreshCookieOptions>()
+    .Bind(builder.Configuration.GetSection(RefreshCookieOptions.SectionName));
+
+// Uniform RFC 7807 errors: validation, binding, auth status codes and unexpected failures.
+builder.Services.AddProblemDetails(options =>
 {
-    throw new InvalidOperationException(
-        "Jwt:SigningKey must be configured using user-secrets or an environment variable.");
-}
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    options.CustomizeProblemDetails = context =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwt.Issuer,
-            ValidateAudience = true,
-            ValidAudience = jwt.Audience,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwt.SigningKey)),
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
-    });
+        context.ProblemDetails.Instance ??= context.HttpContext.Request.Path;
+        if (CorrelationIdMiddleware.Get(context.HttpContext) is { } correlationId)
+            context.ProblemDetails.Extensions["correlationId"] = correlationId;
+    };
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("AdministratorsOnly", policy =>
-        policy.RequireRole("Administrator"));
+// Invalid JSON / missing bodies throw BadHttpRequestException, which the handler maps to 400.
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
+builder.Services.Configure<JsonOptions>(options => options.SerializerOptions.AllowTrailingCommas = false);
 
-builder.Services.AddCors(options =>
+// Uploads: ASP.NET limits are derived from the document storage limit (see DocumentEndpoints).
+builder.Services.Configure<FormOptions>(options =>
 {
-    options.AddPolicy("Frontend", policy =>
-        policy
-            .SetIsOriginAllowed(origin =>
-            {
-                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-                    return false;
-
-                return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                    || uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
-            })
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    options.MultipartBodyLengthLimit = UploadLimits.RequestLimit(builder.Configuration);
 });
 
 builder.Services.AddOpenApi();
@@ -79,24 +62,31 @@ await using (var scope = app.Services.CreateAsyncScope())
     await bootstrapper.BootstrapAsync();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.UseForwardedHeaders();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
-if (!app.Environment.IsDevelopment())
+if (app.Configuration.GetValue("Security:UseHttpsRedirection", !app.Environment.IsDevelopment()))
 {
+    app.UseHsts();
     app.UseHttpsRedirection();
 }
-app.UseCors("Frontend");
+
+app.UseCors(CorsSetup.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
+
+if (app.Environment.IsDevelopment())
+    app.MapOpenApi().AllowAnonymous();
 
 app.MapGet("/", () => Results.Ok(new
 {
     service = "ArchiveCore.WebApi",
     status = "running"
-}));
+})).AllowAnonymous().ExcludeFromDescription();
 
 app.MapAuthEndpoints();
 app.MapAccountEndpoints();
@@ -105,8 +95,9 @@ app.MapDocumentEndpoints();
 app.MapWorkflowEndpoints();
 app.MapAuditEndpoints();
 app.MapCatalogEndpoints();
+app.MapUserEndpoints();
 app.MapAcademicSqlLabEndpoints();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();
 

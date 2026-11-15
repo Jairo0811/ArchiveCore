@@ -1,6 +1,9 @@
+using ArchiveCore.Application.Auth;
+using ArchiveCore.Application.Common;
 using ArchiveCore.Domain.Entities;
 using ArchiveCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ArchiveCore.Infrastructure.Security;
@@ -8,7 +11,8 @@ namespace ArchiveCore.Infrastructure.Security;
 public sealed class AdminBootstrapper(
     ArchiveCoreDbContext db,
     PasswordService passwordService,
-    IOptions<BootstrapAdminOptions> options)
+    IOptions<BootstrapAdminOptions> options,
+    ILogger<AdminBootstrapper> logger)
 {
     public async Task BootstrapAsync(CancellationToken cancellationToken = default)
     {
@@ -20,12 +24,24 @@ public sealed class AdminBootstrapper(
         if (await db.Users.AnyAsync(cancellationToken))
             return;
 
-        if (string.IsNullOrWhiteSpace(config.Email) ||
-            string.IsNullOrWhiteSpace(config.Password) ||
-            config.Password.Length < 12)
+        // Same rules as administrator-provisioned users (PasswordPolicy).
+        if (string.IsNullOrWhiteSpace(config.Email) || !RequestValidator.IsValidEmail(config.Email.Trim()))
         {
             throw new InvalidOperationException(
-                "Bootstrap admin requires a valid email and a password of at least 12 characters.");
+                "BootstrapAdmin:Email must be a valid email address.");
+        }
+
+        if (!PasswordPolicy.IsValid(config.Password))
+        {
+            throw new InvalidOperationException(
+                "BootstrapAdmin:Password does not satisfy the password policy: " + PasswordPolicy.Description);
+        }
+
+        if (string.IsNullOrWhiteSpace(config.FirstName) || string.IsNullOrWhiteSpace(config.LastName) ||
+            config.FirstName.Trim().Length > 100 || config.LastName.Trim().Length > 100)
+        {
+            throw new InvalidOperationException(
+                "BootstrapAdmin:FirstName and BootstrapAdmin:LastName are required (max 100 characters).");
         }
 
         var adminRole = await db.Roles
@@ -52,5 +68,9 @@ public sealed class AdminBootstrapper(
 
         db.Users.Add(user);
         await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogWarning(
+            "Bootstrap administrator created (UserId {UserId}). Disable BootstrapAdmin and remove its password from configuration.",
+            user.UserId);
     }
 }

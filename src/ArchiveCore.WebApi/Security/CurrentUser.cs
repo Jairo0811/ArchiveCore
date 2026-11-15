@@ -1,22 +1,24 @@
-using System.Security.Claims;
 using ArchiveCore.Application.Auth;
+using ArchiveCore.Infrastructure.Security;
+using ArchiveCore.WebApi.Http;
 
 namespace ArchiveCore.WebApi.Security;
 
 public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
 {
-    private ClaimsPrincipal? Principal => accessor.HttpContext?.User;
+    private HttpContext? Context => accessor.HttpContext;
 
     public int? UserId =>
-        int.TryParse(Principal?.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
-            ? id
-            : null;
+        int.TryParse(Context?.User.FindFirst(JwtClaimNames.Subject)?.Value, out var id) ? id : null;
 
-    public string? Email => Principal?.FindFirstValue(ClaimTypes.Email);
+    public string? Email => Context?.User.FindFirst(JwtClaimNames.Email)?.Value;
 
     public IReadOnlyCollection<string> Roles =>
-        Principal?.FindAll(ClaimTypes.Role).Select(x => x.Value).ToArray()
-        ?? [];
+        Context?.User.FindAll(JwtClaimNames.Role).Select(x => x.Value).ToArray() ?? [];
 
-    public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated == true;
+    public bool IsAuthenticated => Context?.User.Identity?.IsAuthenticated == true;
+
+    public string? IpAddress => Context?.Connection.RemoteIpAddress?.ToString();
+
+    public Guid? CorrelationId => Context is null ? null : CorrelationIdMiddleware.Get(Context);
 }

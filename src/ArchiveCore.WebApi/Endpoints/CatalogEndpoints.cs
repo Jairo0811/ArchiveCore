@@ -1,5 +1,7 @@
-using ArchiveCore.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using ArchiveCore.Application.Documents;
+using ArchiveCore.Application.Records;
+using ArchiveCore.Application.Users;
+using ArchiveCore.WebApi.Security;
 
 namespace ArchiveCore.WebApi.Endpoints;
 
@@ -9,34 +11,23 @@ public static class CatalogEndpoints
     {
         var group = app.MapGroup("/api/v1/catalogs")
             .WithTags("Catalogs")
-            .RequireAuthorization();
+            .RequireAuthorization(AuthorizationPolicies.Readers);
 
         group.MapGet("/record-statuses", async (
-            ArchiveCoreDbContext db,
+            IRecordService service,
             CancellationToken cancellationToken) =>
-            Results.Ok(await db.RecordStatuses.AsNoTracking()
-                .OrderBy(x => x.SortOrder)
-                .Select(x => new { x.RecordStatusId, x.Code, x.Name, x.IsFinal })
-                .ToArrayAsync(cancellationToken)));
+            Results.Ok(await service.ListStatusesAsync(cancellationToken)));
 
         group.MapGet("/document-categories", async (
-            ArchiveCoreDbContext db,
+            IDocumentService service,
             CancellationToken cancellationToken) =>
-            Results.Ok(await db.DocumentCategories.AsNoTracking()
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.Name)
-                .Select(x => new { x.DocumentCategoryId, x.Code, x.Name })
-                .ToArrayAsync(cancellationToken)));
+            Results.Ok(await service.ListCategoriesAsync(cancellationToken)));
 
+        // Minimal projection (id + full name) for responsible/assignee pickers and filters.
         group.MapGet("/users", async (
-            ArchiveCoreDbContext db,
+            IUserAdminService service,
             CancellationToken cancellationToken) =>
-            Results.Ok(await db.Users.AsNoTracking()
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.LastName)
-                .ThenBy(x => x.FirstName)
-                .Select(x => new { x.UserId, x.FirstName, x.LastName, x.Email })
-                .ToArrayAsync(cancellationToken)));
+            Results.Ok(await service.LookupActiveAsync(cancellationToken)));
 
         return app;
     }

@@ -144,9 +144,9 @@ jobs:
 
       - name: Database initialization result
         run: |
-          docker compose wait db-init
-          docker compose logs db-init
-          docker compose logs db-init | grep -q "ArchiveCore database validation passed."
+          docker compose logs --no-color db-init
+          test "$(docker inspect --format '{{.State.ExitCode}}' "$(docker compose ps -a -q db-init)")" = "0"
+          docker compose logs --no-color db-init | grep -q "ArchiveCore database validation passed."
 
       - name: End-to-end smoke through Nginx
         run: |
@@ -157,10 +157,8 @@ jobs:
         run: |
           docker compose down
           docker compose up -d
-          docker compose wait db-init
-          docker compose logs db-init | grep -q "already exists"
-          set -a; . ./.env; set +a
           for i in $(seq 1 40); do curl -sf http://localhost:5173/health && break; sleep 3; done
+          docker compose logs --no-color db-init | grep -q "already exists"
           curl -sf http://localhost:5173/health
 
       - name: Logs on failure

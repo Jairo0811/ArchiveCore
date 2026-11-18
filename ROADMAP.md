@@ -117,17 +117,38 @@
 - [x] Display legacy SQL, modern SQL and live SQL Server results side by side.
 - [x] Keep arbitrary SQL execution disabled.
 
+## Phase 12 — Final Hardening & Release Candidate ✅
+
+- [x] Sanitize the public legacy SQL copy and rewrite Git history without the original personal values.
+- [x] Refresh token in an HttpOnly/Secure/SameSite cookie; access token in memory; single-flight refresh, revoke on logout.
+- [x] Rate limiting for login and refresh.
+- [x] Role policies (Administrator, RecordsManager, User) on every endpoint, with 401/403 tests.
+- [x] Correct audit actor, IP and correlation id through SESSION_CONTEXT on every pooled connection.
+- [x] Request validation and ProblemDetails; concurrency conflicts return 409.
+- [x] Stored procedures as the single source of truth for create/assign/transfer/close/add-version.
+- [x] Records, documents, versions, download, audit filters and user administration completed in the UI.
+- [x] Dashboard limited to real values; Spanish UI; responsive and accessibility pass.
+- [x] Secure uploads/downloads with size limits aligned between Nginx and ASP.NET Core.
+- [x] CORS, AllowedHosts, forwarded headers and security headers by environment.
+- [x] Reproducible Docker initialization from a clean volume.
+- [x] SQL Server integration tests, frontend tests, Docker end-to-end smoke and dependency scanning in CI.
+- [x] Official logos deduplicated and optimized (PNG + WebP).
+
 ## Current milestone
 
-**ArchiveCore reconstruction complete and locally validated.**
+**ArchiveCore v1.0.0 — FROZEN — PORTFOLIO RELEASE.**
 
-The project is now considered closed for portfolio purposes. Future work should be limited to intentional maintenance, deployment validation or a new feature scope.
+Every release gate passes in CI on the final commit: Release build, 98 backend tests (including
+SQL Server integration tests), frontend lint/build/tests, dependency scanning, Docker clean boot
+with database validation and the end-to-end smoke test through Nginx.
 
 
 ## Project freeze
 
-**Status: FROZEN — portfolio release**
+**Status: FROZEN — PORTFOLIO RELEASE (v1.0.0)**
 
-ArchiveCore has completed its reconstruction, local integration validation, academic SQL Lab integration and final branding pass.
+ArchiveCore has completed its reconstruction, final hardening, academic SQL Lab integration and
+final branding pass. `main` and `release/archivecore-v1.0.0-frozen` point to the same commit,
+tagged `v1.0.0`.
 
 There is no active feature-development milestone after this point. The project should only be reopened for corrective maintenance, security fixes, compatibility work or an explicit new scope decision.

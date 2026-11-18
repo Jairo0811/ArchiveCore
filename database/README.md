@@ -13,8 +13,19 @@ database/
 ├── 05-procedures.sql
 ├── 06-triggers.sql
 ├── 07-seed.sql
-└── 08-queries.sql
+├── 08-queries.sql
+├── 09-auth.sql
+├── 10-validation.sql
+└── docker/init-db.sh
 ```
+
+With Docker Compose, the one-shot `db-init` service runs `docker/init-db.sh`: it waits for SQL
+Server, creates `ArchiveCoreDb` on a clean volume, executes the scripts in the order below and
+fails unless `10-validation.sql` prints `ArchiveCore database validation passed.` On later starts
+it only re-validates the existing database.
+
+The application executes `sp_CreateRecord`, `sp_AddDocumentVersion`, `sp_TransferRecord` and
+`sp_CloseRecord` directly; see `docs/architecture/data-access-strategy.md`.
 
 ## Execution order
 

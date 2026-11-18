@@ -9,6 +9,7 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit:gate": "node scripts/audit-gate.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

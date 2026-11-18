@@ -104,8 +104,10 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
-      - name: npm audit (fails on High/Critical)
-        run: npm audit --audit-level=high
+      - name: npm audit, runtime dependencies (fails on any High/Critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: npm audit, full tree (fails on High/Critical without a documented exception)
+        run: npm run audit:gate
 
   docker:
     name: Docker clean boot + end-to-end smoke

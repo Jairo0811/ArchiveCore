@@ -114,6 +114,12 @@ describe("routing, roles and session lifecycle", () => {
     expect(within(alert).getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
   });
 
+  it("renders an empty state when there are no records", async () => {
+    apiFor(["User"]);
+    renderApp(<App />, "/records");
+    expect(await screen.findByText("Todavía no hay expedientes registrados.")).toBeInTheDocument();
+  });
+
   it("restores the session after a reload through the refresh cookie", async () => {
     apiFor(["RecordsManager"]);
     renderApp(<App />, "/records");

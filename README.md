@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center">
-  <img src="docs/images/archivecore-logo.png" alt="Logo de ArchiveCore" width="720" />
+  <img src="frontend/public/archivecore-logo-full.png" alt="Logo de ArchiveCore" width="720" />
 </p>
 
 <p align="center">
@@ -10,6 +10,7 @@
 
 
 <img src="https://img.shields.io/badge/Estado-Congelado%20para%20portafolio-64748B?style=for-the-badge" alt="Congelado para portafolio" />
+<img src="https://img.shields.io/badge/Versi%C3%B3n-v1.0.0-0EA5E9?style=for-the-badge" alt="Versión v1.0.0" />
 
 <br/><br/>
 
@@ -129,33 +130,32 @@ De esta forma, el proyecto mantiene su origen académico sin conservar las limit
 
 ### 👤 Usuarios y seguridad
 
-- Inicio de sesión mediante JWT.
-- Refresh tokens.
-- Rotación y revocación de sesiones.
-- Roles de usuario.
-- Política exclusiva para administradores.
-- Creación controlada de usuarios.
-- Bootstrap seguro del primer administrador.
-- Contraseñas almacenadas mediante hash.
+- Inicio de sesión con JWT de corta duración guardado solo en memoria.
+- Refresh token en cookie `HttpOnly` + `Secure` + `SameSite=Strict`, con rotación y revocación.
+- Renovación automática de la sesión ante `401` (un único intento) y cierre de sesión con revocación.
+- Rate limiting en login y refresh.
+- Roles `Administrator`, `RecordsManager` y `User` con políticas de autorización en la API.
+- Página **Usuarios** (solo Administrator): listado, alta con contraseña temporal, roles y activación/desactivación.
+- Bootstrap de un solo uso del primer administrador; **no existen credenciales por defecto**.
+- Política de contraseñas única y contraseñas almacenadas mediante hash.
 
 ### 📁 Expedientes
 
-- Creación de expedientes.
-- Consulta y búsqueda.
-- Estados de expediente.
-- Asignación de responsables.
-- Cierre de expedientes.
-- Historial de actividad.
+- Listado paginado con búsqueda (con debounce) por código o título.
+- Filtros por estado y responsable.
+- Creación, detalle y edición con control de concurrencia (`rowversion` → `409`).
+- Asignación, transferencia y cierre (un expediente cerrado no admite un segundo cierre).
+- Historial de movimientos con usuario origen, destino, autor y notas.
 
 ### 📄 Documentos
 
-- Asociación de documentos a expedientes.
-- Categorías documentales.
-- Versionado.
-- Identificación de versión actual.
+- Selección del expediente por código o título (sin IDs manuales).
+- Metadatos, categorías y primera versión en un solo paso.
+- Nuevas versiones con historial completo e identificación de la versión actual.
+- Hash SHA-256 por versión para validar integridad.
+- Descarga autenticada con nombre de archivo seguro y sin exponer rutas físicas.
+- Allow-list de tipos validada por extensión y firma binaria; límite de tamaño configurable.
 - Eliminación lógica.
-- Almacenamiento físico desacoplado.
-- Hash SHA-256 para validar integridad.
 
 ### 🔄 Flujo de trabajo
 
@@ -170,8 +170,8 @@ De esta forma, el proyecto mantiene su origen académico sin conservar las limit
 - Auditoría automática mediante triggers de SQL Server.
 - Registro de inserciones, modificaciones y eliminaciones.
 - Valores anteriores y posteriores almacenados como JSON.
-- Identificación del usuario que ejecutó la acción.
-- Consulta de auditoría por:
+- Identificación del usuario que realmente ejecutó la acción (`SESSION_CONTEXT` por conexión), su IP y un `CorrelationId`.
+- Consulta de auditoría (solo Administrator) por:
   - entidad,
   - registro,
   - usuario,
@@ -191,7 +191,7 @@ De esta forma, el proyecto mantiene su origen académico sin conservar las limit
 
 ### 📊 Dashboard
 
-El panel principal muestra indicadores operativos como:
+El panel principal muestra únicamente valores reales calculados por la API (sin tendencias ni series simuladas):
 
 - Expedientes activos.
 - Expedientes cerrados.
@@ -199,6 +199,8 @@ El panel principal muestra indicadores operativos como:
 - Usuarios activos.
 - Movimientos realizados en el día.
 - Eventos de auditoría del día.
+
+El indicador de estado se deriva del endpoint `/health` de la API.
 
 La interfaz visual utiliza una identidad oscura en tonos navy, azul y cian, alineada con el concepto de seguridad, trazabilidad y control documental de ArchiveCore.
 
@@ -216,7 +218,10 @@ ArchiveCore/
 │   ├── 07-seed.sql
 │   ├── 08-queries.sql
 │   ├── 09-auth.sql
-│   └── 10-validation.sql
+│   ├── 10-validation.sql
+│   └── docker/init-db.sh
+│
+├── .github/workflows/ci.yml
 │
 ├── docs/
 │   ├── academic/
@@ -226,7 +231,13 @@ ArchiveCore/
 │   └── setup/
 │
 ├── frontend/
-│   └── Aplicación React + TypeScript + Vite
+│   ├── public/            (logos oficiales)
+│   └── src/
+│       ├── api/  auth/  components/  hooks/  layout/  utils/
+│       └── pages/ (Dashboard, Records, Documents, Audit, Users, SqlLab, Login)
+│
+├── scripts/
+│   └── docker-smoke.sh
 │
 ├── src/
 │   ├── ArchiveCore.Domain/
@@ -298,46 +309,129 @@ Los scripts deben ejecutarse en este orden:
 
 El archivo `08-queries.sql` contiene consultas de ejemplo y puede ejecutarse de manera opcional.
 
+Con Docker este orden lo ejecuta automáticamente el servicio `db-init` (ver más abajo).
+
+La decisión entre procedimientos almacenados y EF Core está documentada en
+[`docs/architecture/data-access-strategy.md`](docs/architecture/data-access-strategy.md):
+`sp_CreateRecord`, `sp_AddDocumentVersion`, `sp_TransferRecord` y `sp_CloseRecord` son la
+única implementación de esas operaciones y la API los ejecuta directamente.
+
 Para más detalles consulta:
 
 `database/README.md`
 
-## 🔐 Seguridad y secretos
+## 🔐 Seguridad y credenciales
 
-ArchiveCore **no almacena claves JWT ni contraseñas administrativas dentro del repositorio**.
+> **No existen credenciales por defecto.** El repositorio no contiene contraseñas, claves JWT ni
+> cadenas de conexión con secretos. El primer administrador se crea con el bootstrap de un solo
+> uso y los demás usuarios desde la página **Usuarios**.
 
-Para desarrollo local se utilizan:
+Resumen del modelo:
 
-- .NET User Secrets.
-- Variables de entorno.
-- Configuración específica del entorno.
+- Access token JWT de 15 minutos en memoria; refresh token en cookie `HttpOnly` / `Secure` / `SameSite=Strict`.
+- Políticas de autorización por rol en todos los endpoints; el frontend solo oculta acciones.
+- Validación de entrada con `ProblemDetails` (`400`, `401`, `403`, `404`, `409`, `429`, `500`), sin stack traces ni mensajes SQL en producción.
+- Uploads con allow-list, validación de firma binaria y límite de tamaño coherente entre Nginx y ASP.NET Core.
+- CORS cerrado (same-origin vía Nginx / proxy de Vite), `AllowedHosts`, forwarded headers solo desde la red de Docker y cabeceras de seguridad con CSP estricta.
+- Auditoría con el actor real de cada cambio.
 
-La guía de configuración se encuentra en:
+Guía completa: [`docs/setup/security-setup.md`](docs/setup/security-setup.md).
 
-`docs/setup/security-setup.md`
+## 🚀 Ejecución local (desarrollo)
+
+Requisitos: .NET SDK 10, Node.js 22 y SQL Server 2019+ (o el contenedor de Docker Compose).
+
+1. Crea la base de datos ejecutando los scripts de `database/` en el orden indicado arriba
+   (o levanta solo SQL Server con Docker y deja que `db-init` lo haga: `docker compose up db db-init`).
+2. Configura los secretos de la API con User Secrets (se guardan fuera del repositorio):
+
+   ```powershell
+   cd src/ArchiveCore.WebApi
+   dotnet user-secrets init
+   dotnet user-secrets set "ConnectionStrings:ArchiveCore" "Server=localhost;Database=ArchiveCoreDb;Trusted_Connection=True;TrustServerCertificate=True"
+   # Con el SQL Server de Docker usa en su lugar:
+   # "Server=localhost,1433;Database=ArchiveCoreDb;User Id=sa;Password=<ARCHIVECORE_SQL_SA_PASSWORD>;TrustServerCertificate=True"
+   dotnet user-secrets set "Jwt:SigningKey" "<clave-aleatoria-de-al-menos-32-caracteres>"
+   # Solo para el primer arranque:
+   dotnet user-secrets set "BootstrapAdmin:Enabled" "true"
+   dotnet user-secrets set "BootstrapAdmin:Email" "<tu-correo>"
+   dotnet user-secrets set "BootstrapAdmin:Password" "<contraseña-que-cumpla-la-política>"
+   ```
+
+3. Inicia la API (escucha en `http://localhost:5000`):
+
+   ```bash
+   dotnet run --project src/ArchiveCore.WebApi
+   ```
+
+4. Inicia el frontend (Vite hace de proxy de `/api` y `/health` hacia la API, mismo origen):
+
+   ```bash
+   cd frontend
+   npm ci
+   npm run dev
+   ```
+
+5. Abre `http://localhost:5173`, inicia sesión con el administrador inicial y desactiva el
+   bootstrap (`BootstrapAdmin:Enabled=false`, elimina `BootstrapAdmin:Password`).
 
 ## 🐳 Docker
 
-El proyecto incluye:
+El stack de Docker Compose se inicializa desde cero sin pasos manuales:
 
-- Dockerfile para la API.
-- Dockerfile para el frontend.
-- Nginx para servir la SPA.
-- Docker Compose.
-- SQL Server 2022.
-- Volumen persistente para la base de datos.
-- Volumen persistente para documentos.
+1. `db` — SQL Server 2022 con healthcheck.
+2. `db-init` — servicio de un solo uso que espera a `db` *healthy*, crea `ArchiveCoreDb`,
+   ejecuta los scripts en orden y termina con `ArchiveCore database validation passed.`
+   En reinicios detecta la base existente y solo vuelve a validar.
+3. `api` — arranca únicamente cuando `db-init` terminó correctamente; healthcheck sobre `/health`.
+4. `web` — Nginx sirve el SPA y hace de proxy same-origin de `/api` y `/health`.
 
-## 🧪 Calidad y validación
+Volúmenes persistentes: `archivecore-sql` (base de datos) y `archivecore-documents` (archivos).
 
-El repositorio incluye:
+```bash
+docker compose down -v          # solo si quieres empezar desde un volumen limpio
+cp .env.example .env
+# Edita .env: ARCHIVECORE_SQL_SA_PASSWORD, ARCHIVECORE_JWT_SIGNING_KEY y, para el primer
+# arranque, ARCHIVECORE_BOOTSTRAP_ADMIN_ENABLED=true + EMAIL + PASSWORD.
+docker compose up --build
+```
 
-- Pruebas básicas de la API.
-- Script de validación del esquema SQL.
-- GitHub Actions.
-- Build automatizado del backend.
-- Build automatizado del frontend.
-- Configuración para Docker.
+Abre `http://localhost:5173`. Tras crear el primer administrador, pon
+`ARCHIVECORE_BOOTSTRAP_ADMIN_ENABLED=false`, borra la contraseña de `.env` y reinicia `api`.
+
+| Variable | Obligatoria | Uso |
+|---|:---:|---|
+| `ARCHIVECORE_SQL_SA_PASSWORD` | ✓ | Contraseña `sa` del contenedor SQL Server |
+| `ARCHIVECORE_JWT_SIGNING_KEY` | ✓ | Clave HMAC del JWT (≥ 32 caracteres) |
+| `ARCHIVECORE_BOOTSTRAP_ADMIN_*` | Primer arranque | Administrador inicial de un solo uso |
+| `ARCHIVECORE_WEB_PORT` / `ARCHIVECORE_SQL_PORT` | — | Puertos publicados (5173 / 1433 en `127.0.0.1`) |
+| `ARCHIVECORE_ALLOWED_HOSTS` | — | Hosts aceptados por la API |
+| `ARCHIVECORE_REFRESH_COOKIE_SECURE` | — | `false` solo si accedes por HTTP desde un host distinto de localhost |
+
+El stack local no termina TLS; para un despliegue real coloca un proxy HTTPS delante de `web`.
+
+## 🧪 Pruebas y calidad
+
+| Suite | Contenido |
+|---|---|
+| Backend — unitarias y smoke (xUnit) | Raíz, `401` sin token o con token inválido, JSON malformado, cabeceras de seguridad y `CorrelationId`, CORS, política de contraseñas, inspección de tipos de archivo y nombres seguros. |
+| Backend — integración con **SQL Server real** (Testcontainers) | Scripts `01`–`10` sobre una base limpia; health, login válido/inválido, rate limiting, refresh, revoke, `401`/`403` por rol, expedientes (duplicado, edición con `rowversion`, transferencia, cierre doble), documentos, versiones, hash, descarga, eliminación lógica, auditoría y actor correcto, SQL Lab solo para Administrator. |
+| Frontend (Vitest + Testing Library) | Login, rutas protegidas, permisos por rol, refresh único ante `401`, logout con revocación, estado de error con reintento, estado vacío, formato de fechas. |
+| Docker smoke (`scripts/docker-smoke.sh`) | Arranque desde volumen limpio y flujo completo a través de Nginx: login → refresh → alta de RecordsManager → expediente → documento → versión de 5 MB → descarga → asignación → cierre → auditoría → SQL Lab → logout. |
+
+GitHub Actions (`.github/workflows/ci.yml`) ejecuta en cada push:
+
+- `dotnet restore` / `build -c Release -warnaserror` / `test` (incluye SQL Server real).
+- `npm ci`, `npm run lint`, `npm run build`, `npm test`.
+- Escaneo de dependencias: NuGet vulnerable (incluye transitivas) y `npm audit`; falla ante High/Critical sin excepción documentada.
+- `docker compose config`, `docker compose build`, arranque limpio, validación SQL, smoke end-to-end y reinicio conservando volúmenes.
+
+Comandos locales:
+
+```bash
+dotnet test ArchiveCore.slnx -c Release      # las pruebas de integración requieren Docker
+cd frontend && npm run lint && npm run build && npm test
+```
 
 ## 🗺️ Fases de reconstrucción
 
@@ -358,42 +452,39 @@ El detalle completo se encuentra en:
 
 `ROADMAP.md`
 
-## 🎯 Estado actual
+## 🎯 Estado final
 
-**ArchiveCore se encuentra funcionalmente completado y validado localmente.**
+**ArchiveCore v1.0.0 — FROZEN — PORTFOLIO RELEASE.**
 
-La validación integrada confirmó:
+La versión final pasó por una fase de *hardening / release candidate* que corrigió errores,
+completó en la interfaz las funciones que el backend ya ofrecía (expedientes, documentos,
+versiones, workflow, auditoría y usuarios), endureció seguridad y sesiones, unificó la interfaz
+en español y saneó el repositorio público.
 
-- Restauración y compilación correcta de la solución .NET 10.
-- Build de producción correcto del frontend React + TypeScript + Vite.
-- Ejecución completa de los scripts de `ArchiveCoreDb`.
-- Validación satisfactoria de constraints, índices, vistas, procedimientos, triggers y catálogos.
-- Health check de la API con respuesta `200 OK / Healthy`.
-- Bootstrap seguro del primer administrador.
-- Inicio de sesión JWT y emisión de access/refresh tokens.
-- Integración frontend → API → Entity Framework Core → SQL Server.
-- Dashboard operativo.
-- Navegación y consulta de expedientes.
-- Consulta de documentos por expediente.
-- Vista de auditoría con eventos generados por triggers de SQL Server.
-- Laboratorio SQL SOF-008 con consultas originales y equivalentes modernas ejecutables.
-- Bootstrap administrativo desactivado después de crear la cuenta inicial.
+Cada commit de `main` se valida en GitHub Actions con: build Release, pruebas unitarias,
+pruebas de integración sobre SQL Server real, lint, build y pruebas del frontend, escaneo de
+dependencias y arranque de Docker desde un volumen limpio con smoke test end-to-end.
 
-El repositorio conserva además Docker, pruebas automatizadas, GitHub Actions y documentación de seguridad para futuras ejecuciones o despliegues.
+Limitaciones conocidas (deliberadas para un proyecto académico de portafolio):
 
-A partir de esta validación, ArchiveCore queda **cerrado como reconstrucción académica moderna y proyecto de portafolio**, salvo mantenimiento correctivo o mejoras futuras deliberadas.
+- El stack Docker local no termina TLS; un despliegue público necesita un proxy HTTPS delante.
+- No hay prueba E2E en navegador (Playwright); el flujo completo se valida con el smoke test
+  HTTP a través de Nginx y con las pruebas de componentes del frontend.
+- `npm audit` mantiene una excepción documentada para una advisory sin parche que solo afecta
+  herramientas de desarrollo (ver [`docs/setup/security-setup.md`](docs/setup/security-setup.md#dependencias)).
 
 ## 🧊 Estado de mantenimiento
 
 **ArchiveCore está congelado como proyecto académico restaurado para portafolio.**
 
-No existe desarrollo activo planificado. La rama `main` representa la versión final validada de la reconstrucción y solo debería modificarse ante:
+| Referencia | Valor |
+|---|---|
+| Versión | `v1.0.0` |
+| Rama congelada | `release/archivecore-v1.0.0-frozen` (apunta al mismo commit que `main`) |
+| Estado | `FROZEN — PORTFOLIO RELEASE` |
 
-- correcciones críticas,
-- ajustes de seguridad,
-- problemas de compatibilidad,
-- o una decisión explícita de reabrir el proyecto.
-
+No existe desarrollo activo planificado. Solo debería modificarse ante correcciones críticas,
+ajustes de seguridad, problemas de compatibilidad o una decisión explícita de reabrir el proyecto.
 La evolución histórica se conserva en las ramas de fase y en la documentación del repositorio.
 
 ## 🧭 Continuidad académica

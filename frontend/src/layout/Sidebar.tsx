@@ -31,7 +31,7 @@ export function Sidebar({
   return (
     <aside className={`sidebar${open ? " open" : ""}`} id="app-sidebar">
       <div className="sidebar-brand">
-        <img src="/archivecore-icon.png" alt="" width="56" height="56" />
+        <picture><source srcSet="/archivecore-icon.webp" type="image/webp" /><img src="/archivecore-icon.png" alt="" width="56" height="56" /></picture>
         <div>
           <strong>ArchiveCore</strong>
           <small>Control documental</small>

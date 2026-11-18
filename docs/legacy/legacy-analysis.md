@@ -72,9 +72,16 @@ The SQL Lab treats this file as the canonical legacy source for the original rea
 - `SELECT * FROM Administrador`
 - `SELECT * FROM Usuarios`
 
-The historical `INSERT` statements are preserved only in the legacy artifact. Their identity/contact values are intentionally not rendered by the modern application's SQL Lab.
+The historical `INSERT` statements are preserved structurally in the legacy artifact. The application never renders them: the SQL Lab only shows the original `SELECT` statements.
 
 
-## Public release note
+## Public copy sanitization (2026)
 
-The canonical legacy artifact is preserved for historical accuracy inside the private repository. Before making the repository public, review the historical `INSERT` statements and publish a sanitized legacy copy if necessary so identity/contact data from the original academic artifact is not exposed.
+This repository is public, so the legacy artifact published here is a **sanitized copy**:
+
+- Every table, column, data type, constraint, `INSERT` column list and `SELECT` statement is preserved exactly, so the file keeps its academic and historical value.
+- The original identity and contact values in the two historical `INSERT` statements were replaced with neutral placeholders (`'Nombre'`, `'Apellido'`, `'00000000000'`, `'2000-01-01'`). The placeholders keep the original column order and data types.
+- The Git history was rewritten with `git filter-repo` so the original values are no longer reachable from any branch or tag of this repository. A full backup of the pre-sanitization history was kept offline, outside the repository.
+- The original values are not reproduced anywhere in the repository, its documentation, its commit messages or the application.
+
+The unsanitized original artifact is not part of this repository.

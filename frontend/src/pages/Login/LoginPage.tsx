@@ -49,13 +49,16 @@ export function LoginPage() {
     <main className="login-page">
       <section className="login-card" aria-labelledby="login-title">
         <h1 id="login-title" className="visually-hidden">Iniciar sesión en ArchiveCore</h1>
-        <img
-          className="login-logo login-logo-full"
-          src="/archivecore-logo-full.png"
-          alt="ArchiveCore — Documents, Data, Audit, Trust"
-          width="360"
-          height="203"
-        />
+        <picture>
+          <source srcSet="/archivecore-logo-full.webp" type="image/webp" />
+          <img
+            className="login-logo login-logo-full"
+            src="/archivecore-logo-full.png"
+            alt="ArchiveCore — Documents, Data, Audit, Trust"
+            width="360"
+            height="203"
+          />
+        </picture>
 
         {notice && <p className="login-notice" role="status">{notice}</p>}
 

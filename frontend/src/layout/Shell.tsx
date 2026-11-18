@@ -27,7 +27,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <header className="mobile-bar">
         <div className="mobile-brand">
-          <img src="/archivecore-icon.png" alt="" width="34" height="34" />
+          <picture><source srcSet="/archivecore-icon.webp" type="image/webp" /><img src="/archivecore-icon.png" alt="" width="34" height="34" /></picture>
           <strong>ArchiveCore</strong>
         </div>
         <button
